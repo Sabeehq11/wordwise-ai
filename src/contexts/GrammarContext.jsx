@@ -191,6 +191,12 @@ export const GrammarProvider = ({ children }) => {
   const checkTextGrammar = useCallback((text) => {
     console.log('🔍 checkTextGrammar called with text length:', text.length);
     
+    // Skip grammar checking during scroll to prevent glitches
+    if (document.body.classList.contains('scrolling')) {
+      console.log('⏸️ Skipping grammar check during scroll');
+      return;
+    }
+    
     // Clear existing timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);

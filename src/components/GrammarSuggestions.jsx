@@ -8,6 +8,27 @@ const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }
   const [activeTab, setActiveTab] = useState('corrections');
   const [isBackgroundChecking, setIsBackgroundChecking] = useState(false);
 
+  // Add scroll detection to prevent animation glitches
+  useEffect(() => {
+    let scrollTimer = null;
+    
+    const handleScroll = () => {
+      document.body.classList.add('scrolling');
+      
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        document.body.classList.remove('scrolling');
+      }, 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimer);
+    };
+  }, []);
+
   const hasContent = currentContent && currentContent.trim().length > 0;
   const hasCorrections = corrections && corrections.length > 0;
   const hasLegacyCorrections = legacyCorrections && legacyCorrections.length > 0;

@@ -148,6 +148,9 @@ body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   overflow: visible;
   align-self: flex-start;
+  contain: layout style paint;
+  will-change: contents;
+  transform: translate3d(0, 0, 0);
 }
 
 /* Editor Container */
@@ -379,18 +382,19 @@ button {
 }
 
 button:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translate3d(0, -2px, 0);
   box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+  will-change: transform;
 }
 
 button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
+  transform: translate3d(0, 0, 0);
 }
 
 /* Success/Error buttons */
@@ -426,11 +430,11 @@ select:focus, input:focus, textarea:focus {
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 10px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -449,7 +453,21 @@ select:focus, input:focus, textarea:focus {
 }
 
 .suggestion-item {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.2s ease-out;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Disable animations during scroll to prevent glitching */
+.scrolling .suggestion-item {
+  animation: none;
+  transition: none;
+}
+
+.scrolling button:hover {
+  transform: translate3d(0, 0, 0) !important;
+  transition: none !important;
 }
 
 .error-message {
@@ -557,18 +575,20 @@ select:focus, input:focus, textarea:focus {
 
 /* Navbar button hover effects */
 .navbar button:hover {
-  transform: translateY(-1px);
+  transform: translate3d(0, -1px, 0);
+  will-change: transform;
 }
 
 .navbar a:hover button {
-  transform: translateY(-1px);
+  transform: translate3d(0, -1px, 0);
+  will-change: transform;
 }
 
 /* Smooth transitions for all interactive elements */
 button, a {
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 button:hover {
-  transform: translateY(-1px);
+  transform: translate3d(0, -1px, 0);
 }
