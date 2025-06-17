@@ -89,12 +89,25 @@ export const checkGrammarWithOpenAI = async (text) => {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     console.log("🧪 Loaded API key:", apiKey);
     
+    // Detect mobile device for timeout adjustments
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    console.log(`📱 Mobile device detected: ${isMobile}`);
+    console.log(`🔍 Checking grammar for text (${text.length} chars):`, text.substring(0, 100) + '...');
+    
+    // Create fetch with timeout for mobile reliability
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, isMobile ? 15000 : 10000); // Longer timeout on mobile
+    
     const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
@@ -108,10 +121,12 @@ export const checkGrammarWithOpenAI = async (text) => {
           }
         ],
         temperature: 0.1, // Low temperature for consistent, accurate corrections
-        max_tokens: 2000,
+        max_tokens: isMobile ? 1500 : 2000, // Smaller response on mobile for faster processing
         response_format: { type: "json_object" }
       })
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -153,6 +168,31 @@ export const checkGrammarWithOpenAI = async (text) => {
   } catch (error) {
     console.error('OpenAI API error:', error);
     
+    // Enhanced mobile error logging
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log('📱 Mobile-specific error details:', {
+        name: error.name,
+        message: error.message,
+        networkState: navigator.onLine ? 'online' : 'offline',
+        connection: navigator.connection ? {
+          effectiveType: navigator.connection.effectiveType,
+          downlink: navigator.connection.downlink,
+          rtt: navigator.connection.rtt
+        } : 'unknown'
+      });
+    }
+    
+    // Provide helpful error messages for mobile users
+    let errorMessage = error.message;
+    if (error.name === 'AbortError') {
+      errorMessage = isMobile ? 
+        'Grammar check timed out. This might be due to slow network. Please try again.' :
+        'Request timed out. Please try again.';
+    } else if (!navigator.onLine) {
+      errorMessage = 'No internet connection. Please check your network and try again.';
+    }
+    
     // Return basic stats even if API fails
     return {
       corrections: [],
@@ -167,7 +207,7 @@ export const checkGrammarWithOpenAI = async (text) => {
         clarityScore: 100
       },
       suggestions: [],
-      error: error.message
+      error: errorMessage
     };
   }
 };

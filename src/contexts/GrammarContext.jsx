@@ -191,9 +191,13 @@ export const GrammarProvider = ({ children }) => {
   const checkTextGrammar = useCallback((text) => {
     console.log('🔍 checkTextGrammar called with text length:', text.length);
     
-    // Skip grammar checking during scroll to prevent glitches
-    if (document.body.classList.contains('scrolling')) {
-      console.log('⏸️ Skipping grammar check during scroll');
+    // Detect if we're on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     (window.innerWidth <= 768);
+    
+    // On mobile, be less aggressive about skipping during scroll
+    if (!isMobile && document.body.classList.contains('scrolling')) {
+      console.log('⏸️ Skipping grammar check during scroll (desktop only)');
       return;
     }
     

@@ -12,21 +12,52 @@ const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }
   useEffect(() => {
     let scrollTimer = null;
     
+    // Detect if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     (window.innerWidth <= 768);
+    
     const handleScroll = () => {
       document.body.classList.add('scrolling');
       
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
         document.body.classList.remove('scrolling');
-      }, 150);
+      }, isMobile ? 50 : 150); // Much shorter delay on mobile
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollTimer);
-    };
+    // Only add scroll detection if not on mobile, or use touch events for mobile
+    if (isMobile) {
+      // On mobile, use touchstart/touchend instead of scroll for better detection
+      let touchTimer = null;
+      
+      const handleTouchStart = () => {
+        document.body.classList.add('scrolling');
+        clearTimeout(touchTimer);
+      };
+      
+      const handleTouchEnd = () => {
+        clearTimeout(touchTimer);
+        touchTimer = setTimeout(() => {
+          document.body.classList.remove('scrolling');
+        }, 100); // Very short delay for touch events
+      };
+      
+      window.addEventListener('touchstart', handleTouchStart, { passive: true });
+      window.addEventListener('touchend', handleTouchEnd, { passive: true });
+      
+      return () => {
+        window.removeEventListener('touchstart', handleTouchStart);
+        window.removeEventListener('touchend', handleTouchEnd);
+        clearTimeout(touchTimer);
+      };
+    } else {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        clearTimeout(scrollTimer);
+      };
+    }
   }, []);
 
   const hasContent = currentContent && currentContent.trim().length > 0;
