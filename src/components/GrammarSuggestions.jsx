@@ -663,39 +663,72 @@ const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }
 
   if (!hasContent) {
     return (
-      <div style={{ padding: '1.5rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📝</div>
-        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
-          Grammar Assistant
-        </h3>
-        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-          Start typing in the editor to see grammar suggestions and corrections here.
-        </p>
-        {!isApiKeyConfigured && (
-          <div style={{
-            backgroundColor: '#fef3c7',
-            border: '1px solid #fbbf24',
-            borderRadius: '0.375rem',
-            padding: '1rem',
-            marginTop: '1rem'
+      <div style={{ 
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'fit-content'
+      }}>
+        {/* Score Placeholder */}
+        <div style={{
+          padding: '1rem',
+          background: 'linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)',
+          color: '#6b7280',
+          textAlign: 'center',
+          borderRadius: '0 0 1rem 1rem',
+          marginBottom: '0.5rem'
+        }}>
+          <div style={{ 
+            fontSize: '1.75rem', 
+            fontWeight: '700',
+            marginBottom: '0.25rem'
           }}>
-            <h4 style={{ color: '#92400e', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-              🔑 API Key Setup Required
-            </h4>
-            <p style={{ color: '#92400e', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-              To enable AI-powered grammar checking:
-            </p>
-            <ol style={{ color: '#92400e', fontSize: '0.75rem', marginLeft: '1rem', lineHeight: '1.4' }}>
-              <li>Get your API key from <a href="https://platform.openai.com/account/api-keys" target="_blank" style={{ color: '#1d4ed8' }}>OpenAI</a></li>
-              <li>Open the <code>.env</code> file in your project root</li>
-              <li>Replace <code>your-openai-api-key-here</code> with your actual API key</li>
-              <li>Restart the development server</li>
-            </ol>
+            --
           </div>
-        )}
-      </div>
-    );
-  }
+          <div style={{ 
+            fontSize: '0.875rem', 
+            fontWeight: '500',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Writing Score
+          </div>
+        </div>
+
+        <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📝</div>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+            Grammar Assistant
+          </h3>
+                      <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+              Start typing in the editor to see your writing score and get grammar suggestions here.
+            </p>
+            {!isApiKeyConfigured && (
+              <div style={{
+                backgroundColor: '#fef3c7',
+                border: '1px solid #fbbf24',
+                borderRadius: '0.375rem',
+                padding: '1rem',
+                marginTop: '1rem'
+              }}>
+                <h4 style={{ color: '#92400e', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  🔑 API Key Setup Required
+                </h4>
+                <p style={{ color: '#92400e', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  To enable AI-powered grammar checking:
+                </p>
+                <ol style={{ color: '#92400e', fontSize: '0.75rem', marginLeft: '1rem', lineHeight: '1.4' }}>
+                  <li>Get your API key from <a href="https://platform.openai.com/account/api-keys" target="_blank" style={{ color: '#1d4ed8' }}>OpenAI</a></li>
+                  <li>Open the <code>.env</code> file in your project root</li>
+                  <li>Replace <code>your-openai-api-key-here</code> with your actual API key</li>
+                  <li>Restart the development server</li>
+                </ol>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
 
   return (
     <div style={{ 
@@ -704,6 +737,55 @@ const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }
       flexDirection: 'column',
       minHeight: 'fit-content'
     }}>
+      {/* Writing Score Display */}
+      {hasStats && stats.words > 0 && (
+        <div style={{
+          padding: '1rem',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          textAlign: 'center',
+          borderRadius: '0 0 1rem 1rem',
+          marginBottom: '0.5rem'
+        }}>
+          <div style={{ 
+            fontSize: '1.75rem', 
+            fontWeight: '700',
+            marginBottom: '0.25rem'
+          }}>
+            {stats.overallScore}
+          </div>
+          <div style={{ 
+            fontSize: '0.875rem', 
+            fontWeight: '500',
+            opacity: 0.9,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Writing Score
+          </div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: '0.75rem',
+            fontSize: '0.75rem',
+            opacity: 0.8
+          }}>
+            <div>
+              <div style={{ fontWeight: '600' }}>{stats.grammarScore}</div>
+              <div>Grammar</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: '600' }}>{stats.spellingScore}</div>
+              <div>Spelling</div>
+            </div>
+            <div>
+              <div style={{ fontWeight: '600' }}>{stats.clarityScore}</div>
+              <div>Clarity</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         padding: '1rem',

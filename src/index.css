@@ -31,13 +31,36 @@ body {
 
 /* Navigation */
 .navbar {
-  background: rgba(255, 255, 255, 0.95);
+  background: transparent;
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
   position: sticky;
   top: 0;
   z-index: 100;
+  position: relative;
+}
+
+/* Hamburger menu styles */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 24px;
+  height: 18px;
+}
+
+.hamburger span {
+  display: block;
+  height: 3px;
+  width: 100%;
+  background-color: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle {
+  position: relative;
 }
 
 .navbar-content {
@@ -52,12 +75,17 @@ body {
 .navbar-brand {
   font-size: 1.75rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
   text-decoration: none;
   letter-spacing: -0.025em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
 }
 
 .navbar-nav {
@@ -543,10 +571,28 @@ select:focus, input:focus, textarea:focus {
   }
 }
 
+/* Mobile navigation styles */
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: block !important;
+  }
+  
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-nav {
+    display: flex !important;
+  }
+  
+  .mobile-nav-open {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+  }
+}
+
 @media (max-width: 480px) {
   .navbar-content {
-    flex-direction: column;
-    gap: 1rem;
     padding: 1rem;
   }
 
