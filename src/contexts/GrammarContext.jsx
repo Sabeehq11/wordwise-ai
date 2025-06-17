@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { checkGrammarWithOpenAI, isOpenAIAvailable, testOpenAIConnection } from '../services/openaiService';
+import { checkGrammar as checkGrammarWithLegacyService } from '../services/grammarService';
 
 const GrammarContext = createContext();
 
@@ -13,7 +14,9 @@ export const useGrammar = () => {
 
 export const GrammarProvider = ({ children }) => {
   const [corrections, setCorrections] = useState([]);
+  const [legacyCorrections, setLegacyCorrections] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [legacySuggestions, setLegacySuggestions] = useState([]);
   const [stats, setStats] = useState({
     words: 0,
     characters: 0,
@@ -62,11 +65,13 @@ export const GrammarProvider = ({ children }) => {
     }
   };
 
-  // AI-powered grammar check function
+  // AI-powered grammar check function using both services
   const performGrammarCheck = useCallback(async (text) => {
     if (!text || text.trim().length < 10) {
       setCorrections([]);
+      setLegacyCorrections([]);
       setSuggestions([]);
+      setLegacySuggestions([]);
       setStats({
         words: 0,
         characters: 0,
@@ -86,7 +91,7 @@ export const GrammarProvider = ({ children }) => {
 
     // Don't check the same text again, but allow minor changes
     const textChanged = text !== lastCheckedTextRef.current;
-    if (!textChanged && corrections.length > 0) {
+    if (!textChanged && (corrections.length > 0 || legacyCorrections.length > 0)) {
       return;
     }
 
@@ -96,34 +101,72 @@ export const GrammarProvider = ({ children }) => {
     lastCheckedTextRef.current = text;
 
     try {
-      const result = await checkGrammarWithOpenAI(text);
-      
-      if (result.error) {
-        setError(result.error);
-        return;
+      // Call both services simultaneously
+      const [modernResult, legacyResult] = await Promise.allSettled([
+        checkGrammarWithOpenAI(text),
+        checkGrammarWithLegacyService(text)
+      ]);
+
+      // Handle modern service results
+      if (modernResult.status === 'fulfilled' && !modernResult.value.error) {
+        const result = modernResult.value;
+        setCorrections(result.corrections || []);
+        setSuggestions(result.suggestions || []);
+        
+        // Update writing statistics from modern AI
+        setStats(result.stats || {
+          words: text.trim().split(/\s+/).length,
+          characters: text.length,
+          sentences: text.split(/[.!?]+/).filter(s => s.trim()).length,
+          issues: (result.corrections?.length || 0) + (legacyResult.status === 'fulfilled' ? legacyResult.value.corrections?.length || 0 : 0),
+          overallScore: 100,
+          grammarScore: 100,
+          spellingScore: 100,
+          clarityScore: 100
+        });
+      } else {
+        setCorrections([]);
+        setSuggestions([]);
+        if (modernResult.status === 'rejected') {
+          console.error('Modern AI service failed:', modernResult.reason);
+        }
       }
 
-      // Update corrections and suggestions from AI
-      setCorrections(result.corrections || []);
-      setSuggestions(result.suggestions || []);
-      
-      // Update writing statistics from AI
-      setStats(result.stats || {
-        words: text.trim().split(/\s+/).length,
-        characters: text.length,
-        sentences: text.split(/[.!?]+/).filter(s => s.trim()).length,
-        issues: result.corrections?.length || 0,
-        overallScore: 100,
-        grammarScore: 100,
-        spellingScore: 100,
-        clarityScore: 100
-      });
+      // Handle legacy service results
+      if (legacyResult.status === 'fulfilled') {
+        const result = legacyResult.value;
+        setLegacyCorrections(result.corrections || []);
+        setLegacySuggestions(result.suggestions || []);
+      } else {
+        setLegacyCorrections([]);
+        setLegacySuggestions([]);
+        console.error('Legacy AI service failed:', legacyResult.reason);
+      }
+
+      // Set error only if both services failed
+      if (modernResult.status === 'rejected' && legacyResult.status === 'rejected') {
+        setError('Both AI grammar services are temporarily unavailable. Please check your API key and try again.');
+      }
+
+      // Still provide basic stats even if both services fail
+      if (modernResult.status === 'rejected' && legacyResult.status === 'rejected') {
+        setStats({
+          words: text.trim().split(/\s+/).length,
+          characters: text.length,
+          sentences: text.split(/[.!?]+/).filter(s => s.trim()).length,
+          issues: 0,
+          overallScore: 100,
+          grammarScore: 100,
+          spellingScore: 100,
+          clarityScore: 100
+        });
+      }
 
     } catch (err) {
-      console.error('AI grammar check failed:', err);
-      setError('AI grammar checking temporarily unavailable. Please check your API key and try again.');
+      console.error('Grammar check failed:', err);
+      setError('Grammar checking temporarily unavailable. Please try again.');
       
-      // Still provide basic stats even if AI check fails
+      // Still provide basic stats
       setStats({
         words: text.trim().split(/\s+/).length,
         characters: text.length,
@@ -146,15 +189,15 @@ export const GrammarProvider = ({ children }) => {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Use shorter delay for better real-time experience
-    const delay = corrections.length > 0 ? 1000 : 1500; // Faster updates when we have existing results
+    // Use fixed delay to prevent glitching - no more adaptive timing
+    const delay = 2000; // Fixed 2 second delay for consistent behavior
     
     // Set new timer
     debounceTimerRef.current = setTimeout(() => {
       performGrammarCheck(text);
     }, delay);
 
-  }, [performGrammarCheck, corrections.length]); // Include corrections.length for adaptive timing
+  }, [performGrammarCheck]); // Removed corrections.length dependency to prevent re-renders
 
   // Manual grammar check (for button clicks) - always shows loading
   const checkGrammarNow = useCallback(async (text) => {
@@ -172,39 +215,18 @@ export const GrammarProvider = ({ children }) => {
     setError('');
     lastCheckedTextRef.current = text;
 
-    try {
-      const result = await checkGrammarWithOpenAI(text);
-      
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-
-      setCorrections(result.corrections || []);
-      setSuggestions(result.suggestions || []);
-      setStats(result.stats || {
-        words: text.trim().split(/\s+/).length,
-        characters: text.length,
-        sentences: text.split(/[.!?]+/).filter(s => s.trim()).length,
-        issues: result.corrections?.length || 0,
-        overallScore: 100,
-        grammarScore: 100,
-        spellingScore: 100,
-        clarityScore: 100
-      });
-
-    } catch (err) {
-      console.error('Manual grammar check failed:', err);
-      setError('Grammar checking failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    // Call the same function that handles both services
+    await performGrammarCheck(text);
+    
+    // Note: loading state is handled by performGrammarCheck
+  }, [performGrammarCheck]);
 
   // Clear all suggestions
   const clearSuggestions = useCallback(() => {
     setCorrections([]);
+    setLegacyCorrections([]);
     setSuggestions([]);
+    setLegacySuggestions([]);
     setStats({
       words: 0,
       characters: 0,
@@ -246,7 +268,9 @@ export const GrammarProvider = ({ children }) => {
   const value = React.useMemo(() => ({
     // State
     corrections,
+    legacyCorrections,
     suggestions,
+    legacySuggestions,
     stats,
     loading,
     error,
@@ -267,7 +291,9 @@ export const GrammarProvider = ({ children }) => {
     performAnalysis: checkGrammarNow // Explicit AI analysis trigger
   }), [
     corrections,
+    legacyCorrections,
     suggestions,
+    legacySuggestions,
     stats,
     loading,
     error,

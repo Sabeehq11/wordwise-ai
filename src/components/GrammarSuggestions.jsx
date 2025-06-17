@@ -2,22 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { useGrammar } from '../contexts/GrammarContext';
 
 const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
-  const { corrections, stats, suggestions, loading: grammarLoading } = useGrammar();
+  const { corrections, legacyCorrections, stats, suggestions, legacySuggestions, loading: grammarLoading } = useGrammar();
   const aiLoading = false; // AI suggestions use the same loading state
   const [activeTab, setActiveTab] = useState('corrections');
   const [isBackgroundChecking, setIsBackgroundChecking] = useState(false);
 
   const hasContent = currentContent && currentContent.trim().length > 0;
   const hasCorrections = corrections && corrections.length > 0;
+  const hasLegacyCorrections = legacyCorrections && legacyCorrections.length > 0;
+  const hasAnyCorrections = hasCorrections || hasLegacyCorrections;
   const hasStats = stats && stats.words > 0;
   const hasSuggestions = suggestions && suggestions.length > 0;
+  const hasLegacySuggestions = legacySuggestions && legacySuggestions.length > 0;
+  const hasAnySuggestions = hasSuggestions || hasLegacySuggestions;
 
   // Auto-switch to corrections tab when they become available
   useEffect(() => {
-    if (hasCorrections) {
+    if (hasAnyCorrections) {
       setActiveTab('corrections');
     }
-  }, [hasCorrections]);
+  }, [hasAnyCorrections]);
 
   const renderTabButton = (tabName, label, count = null, isLoading = false) => (
     <button
@@ -71,7 +75,7 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
 
   const renderCorrections = () => {
     // Only show loading spinner on manual checks or when no content has been checked yet
-    if (grammarLoading && !hasCorrections && !hasContent) {
+    if (grammarLoading && !hasAnyCorrections && !hasContent) {
       return (
         <div style={{ padding: '2rem', textAlign: 'center' }}>
           <div
@@ -86,14 +90,14 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
             }}
           />
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-            Checking grammar...
+            Checking grammar with dual AI services...
           </p>
         </div>
       );
     }
 
     // Show demo corrections if API key is not configured and text has obvious errors
-    if (!hasCorrections && !isApiKeyConfigured && hasContent) {
+    if (!hasAnyCorrections && !isApiKeyConfigured && hasContent) {
       const demoCorrections = [];
       const lowerText = currentContent.toLowerCase();
       
@@ -190,7 +194,7 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
       }
     }
 
-    if (!hasCorrections) {
+        if (!hasAnyCorrections) {
       return (
         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
@@ -198,7 +202,7 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
             No issues found
           </p>
           <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-            Your text looks grammatically correct!
+            Both AI services found your text grammatically correct!
           </p>
         </div>
       );
@@ -206,56 +210,163 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {corrections.map((correction, index) => (
-          <div
-            key={index}
-            style={{
-              padding: '1rem',
-              borderBottom: index < corrections.length - 1 ? '1px solid #e5e7eb' : 'none',
-              backgroundColor: '#ffffff'
-            }}
-          >
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{
-                backgroundColor: '#fef3c7',
-                color: '#92400e',
-                padding: '0.25rem 0.5rem',
+        {/* Modern AI Service Corrections */}
+        {hasCorrections && (
+          <>
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f0f9ff',
+              borderBottom: '1px solid #e0e7ff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1rem' }}>🤖</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e40af' }}>
+                AI Service 1 (GPT-4o Advanced)
+              </span>
+              <span style={{
+                backgroundColor: '#1e40af',
+                color: 'white',
+                padding: '0.125rem 0.375rem',
                 borderRadius: '1rem',
                 fontSize: '0.75rem',
-                fontWeight: '500',
-                display: 'inline-block',
-                marginBottom: '0.5rem'
+                fontWeight: '500'
               }}>
-                {correction.ruleId || 'Grammar'}
-              </div>
-              <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>
-                <span style={{ 
-                  backgroundColor: '#fee2e2', 
-                  textDecoration: 'line-through',
-                  padding: '0.125rem 0.25rem',
-                  borderRadius: '0.25rem'
-                }}>
-                  {currentContent.substring(correction.offset, correction.offset + correction.length)}
-                </span>
-                {' → '}
-                <span style={{ 
-                  backgroundColor: '#d1fae5',
-                  color: '#065f46',
-                  padding: '0.125rem 0.25rem',
-                  borderRadius: '0.25rem',
-                  fontWeight: '500'
-                }}>
-                                     {correction.corrected || (correction.replacements && correction.replacements[0] ? correction.replacements[0].value : 'N/A')}
-                </span>
-              </p>
-              {correction.message && (
-                <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>
-                  {correction.message}
-                </p>
-              )}
+                {corrections.length}
+              </span>
             </div>
-          </div>
-        ))}
+            {corrections.map((correction, index) => (
+              <div
+                key={`modern-${index}`}
+                style={{
+                  padding: '1rem',
+                  borderBottom: '1px solid #e5e7eb',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <div style={{
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    display: 'inline-block',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {correction.type || 'Grammar'}
+                  </div>
+                  <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>
+                    <span style={{ 
+                      backgroundColor: '#fee2e2', 
+                      textDecoration: 'line-through',
+                      padding: '0.125rem 0.25rem',
+                      borderRadius: '0.25rem'
+                    }}>
+                      {correction.original}
+                    </span>
+                    {' → '}
+                    <span style={{ 
+                      backgroundColor: '#d1fae5',
+                      color: '#065f46',
+                      padding: '0.125rem 0.25rem',
+                      borderRadius: '0.25rem',
+                      fontWeight: '500'
+                    }}>
+                      {correction.corrected}
+                    </span>
+                  </p>
+                  {correction.explanation && (
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>
+                      {correction.explanation}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* Legacy AI Service Corrections */}
+        {hasLegacyCorrections && (
+          <>
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f0fdf4',
+              borderBottom: '1px solid #dcfce7',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1rem' }}>🎓</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#166534' }}>
+                AI Service 2 (GPT-3.5 ESL Focus)
+              </span>
+              <span style={{
+                backgroundColor: '#166534',
+                color: 'white',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '1rem',
+                fontSize: '0.75rem',
+                fontWeight: '500'
+              }}>
+                {legacyCorrections.length}
+              </span>
+            </div>
+            {legacyCorrections.map((correction, index) => (
+              <div
+                key={`legacy-${index}`}
+                style={{
+                  padding: '1rem',
+                  borderBottom: index < legacyCorrections.length - 1 ? '1px solid #e5e7eb' : 'none',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <div style={{
+                    backgroundColor: '#dcfce7',
+                    color: '#166534',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    display: 'inline-block',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {correction.type || 'Grammar'}
+                  </div>
+                  <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>
+                    <span style={{ 
+                      backgroundColor: '#fee2e2', 
+                      textDecoration: 'line-through',
+                      padding: '0.125rem 0.25rem',
+                      borderRadius: '0.25rem'
+                    }}>
+                      {correction.original}
+                    </span>
+                    {' → '}
+                    <span style={{ 
+                      backgroundColor: '#d1fae5',
+                      color: '#065f46',
+                      padding: '0.125rem 0.25rem',
+                      borderRadius: '0.25rem',
+                      fontWeight: '500'
+                    }}>
+                      {correction.corrected}
+                    </span>
+                  </p>
+                  {correction.explanation && (
+                    <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>
+                      {correction.explanation}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     );
   };
@@ -330,7 +441,7 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
       );
     }
 
-    if (!hasSuggestions) {
+    if (!hasAnySuggestions) {
       return (
         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🤖</div>
@@ -357,32 +468,115 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {suggestions.map((suggestion, index) => (
-          <div
-            key={index}
-            style={{
-              padding: '1rem',
-              borderBottom: index < suggestions.length - 1 ? '1px solid #e5e7eb' : 'none',
-              backgroundColor: '#ffffff'
-            }}
-          >
+        {/* Modern AI Service Suggestions */}
+        {hasSuggestions && (
+          <>
             <div style={{
-              backgroundColor: '#ecfdf5',
-              color: '#047857',
-              padding: '0.25rem 0.5rem',
-              borderRadius: '1rem',
-              fontSize: '0.75rem',
-              fontWeight: '500',
-              display: 'inline-block',
-              marginBottom: '0.5rem'
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f0f9ff',
+              borderBottom: '1px solid #e0e7ff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              AI Suggestion
+              <span style={{ fontSize: '1rem' }}>🤖</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e40af' }}>
+                AI Service 1 Tips
+              </span>
+              <span style={{
+                backgroundColor: '#1e40af',
+                color: 'white',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '1rem',
+                fontSize: '0.75rem',
+                fontWeight: '500'
+              }}>
+                {suggestions.length}
+              </span>
             </div>
-            <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.5' }}>
-              {suggestion}
-            </p>
-          </div>
-        ))}
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={`modern-tip-${index}`}
+                style={{
+                  padding: '1rem',
+                  borderBottom: '1px solid #e5e7eb',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <div style={{
+                  backgroundColor: '#dbeafe',
+                  color: '#1e40af',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '1rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '500',
+                  display: 'inline-block',
+                  marginBottom: '0.5rem'
+                }}>
+                  Advanced Tip
+                </div>
+                <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.5' }}>
+                  {suggestion}
+                </p>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* Legacy AI Service Suggestions */}
+        {hasLegacySuggestions && (
+          <>
+            <div style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#f0fdf4',
+              borderBottom: '1px solid #dcfce7',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1rem' }}>🎓</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#166534' }}>
+                AI Service 2 Tips
+              </span>
+              <span style={{
+                backgroundColor: '#166534',
+                color: 'white',
+                padding: '0.125rem 0.375rem',
+                borderRadius: '1rem',
+                fontSize: '0.75rem',
+                fontWeight: '500'
+              }}>
+                {legacySuggestions.length}
+              </span>
+            </div>
+            {legacySuggestions.map((suggestion, index) => (
+              <div
+                key={`legacy-tip-${index}`}
+                style={{
+                  padding: '1rem',
+                  borderBottom: index < legacySuggestions.length - 1 ? '1px solid #e5e7eb' : 'none',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <div style={{
+                  backgroundColor: '#dcfce7',
+                  color: '#166534',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '1rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '500',
+                  display: 'inline-block',
+                  marginBottom: '0.5rem'
+                }}>
+                  ESL Tip
+                </div>
+                <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.5' }}>
+                  {typeof suggestion === 'string' ? suggestion : suggestion.text}
+                </p>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     );
   };
@@ -451,9 +645,9 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
         
         {/* Tab Navigation */}
         <div style={{ display: 'flex', gap: '0.25rem' }}>
-          {renderTabButton('corrections', 'Issues', hasCorrections ? corrections.length : 0, false)}
+          {renderTabButton('corrections', 'Issues', hasAnyCorrections ? (corrections.length + legacyCorrections.length) : 0, false)}
           {renderTabButton('stats', 'Stats')}
-          {renderTabButton('suggestions', 'AI Tips', hasSuggestions ? suggestions.length : 0, aiLoading)}
+          {renderTabButton('suggestions', 'AI Tips', hasAnySuggestions ? (suggestions.length + legacySuggestions.length) : 0, aiLoading)}
         </div>
       </div>
 
