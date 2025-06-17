@@ -1,0 +1,498 @@
+import React, { useState, useEffect } from 'react';
+import { useGrammar } from '../contexts/GrammarContext';
+
+const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
+  const { corrections, stats, suggestions, loading: grammarLoading } = useGrammar();
+  const aiLoading = false; // AI suggestions use the same loading state
+  const [activeTab, setActiveTab] = useState('corrections');
+  const [isBackgroundChecking, setIsBackgroundChecking] = useState(false);
+
+  const hasContent = currentContent && currentContent.trim().length > 0;
+  const hasCorrections = corrections && corrections.length > 0;
+  const hasStats = stats && stats.words > 0;
+  const hasSuggestions = suggestions && suggestions.length > 0;
+
+  // Auto-switch to corrections tab when they become available
+  useEffect(() => {
+    if (hasCorrections) {
+      setActiveTab('corrections');
+    }
+  }, [hasCorrections]);
+
+  const renderTabButton = (tabName, label, count = null, isLoading = false) => (
+    <button
+      onClick={() => setActiveTab(tabName)}
+      style={{
+        flex: 1,
+        padding: '0.5rem 0.75rem',
+        border: 'none',
+        backgroundColor: activeTab === tabName ? '#3b82f6' : '#f3f4f6',
+        color: activeTab === tabName ? 'white' : '#374151',
+        borderRadius: '0.375rem',
+        fontSize: '0.75rem',
+        fontWeight: '500',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.25rem'
+      }}
+    >
+      {isLoading && (
+        <div
+          style={{
+            width: '12px',
+            height: '12px',
+            border: '2px solid currentColor',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}
+        />
+      )}
+      {label}
+      {count !== null && (
+        <span
+          style={{
+            backgroundColor: activeTab === tabName ? 'rgba(255,255,255,0.2)' : '#e5e7eb',
+            color: activeTab === tabName ? 'white' : '#6b7280',
+            padding: '0.125rem 0.375rem',
+            borderRadius: '1rem',
+            fontSize: '0.625rem',
+            fontWeight: '600'
+          }}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
+
+  const renderCorrections = () => {
+    // Only show loading spinner on manual checks or when no content has been checked yet
+    if (grammarLoading && !hasCorrections && !hasContent) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid #e5e7eb',
+              borderTopColor: '#3b82f6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 1rem'
+            }}
+          />
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+            Checking grammar...
+          </p>
+        </div>
+      );
+    }
+
+    // Show demo corrections if API key is not configured and text has obvious errors
+    if (!hasCorrections && !isApiKeyConfigured && hasContent) {
+      const demoCorrections = [];
+      const lowerText = currentContent.toLowerCase();
+      
+      // Check for common spelling mistakes
+      if (lowerText.includes('mayeb')) {
+        demoCorrections.push({
+          original: 'mayeb',
+          corrected: 'maybe',
+          explanation: 'Spelling correction: "maybe" is the correct spelling.',
+          type: 'spelling'
+        });
+      }
+      if (lowerText.includes('proetim')) {
+        demoCorrections.push({
+          original: 'proetim',
+          corrected: 'protein',
+          explanation: 'Spelling correction: "protein" is the correct spelling.',
+          type: 'spelling'
+        });
+      }
+      if (lowerText.includes('proetimb')) {
+        demoCorrections.push({
+          original: 'proetimb',
+          corrected: 'protein',
+          explanation: 'Spelling correction: "protein" is the correct spelling.',
+          type: 'spelling'
+        });
+      }
+
+      if (demoCorrections.length > 0) {
+        return (
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ 
+              backgroundColor: '#fef3c7', 
+              padding: '0.75rem', 
+              marginBottom: '1rem',
+              borderRadius: '0.375rem',
+              border: '1px solid #fbbf24'
+            }}>
+              <p style={{ color: '#92400e', fontSize: '0.75rem', margin: 0 }}>
+                📝 Demo Mode: Add your OpenAI API key to get AI-powered grammar checking
+              </p>
+            </div>
+            {demoCorrections.map((correction, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: '1rem',
+                  borderBottom: index < demoCorrections.length - 1 ? '1px solid #e5e7eb' : 'none',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <div style={{
+                    backgroundColor: '#fef3c7',
+                    color: '#92400e',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '1rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    display: 'inline-block',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {correction.type}
+                  </div>
+                  <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>
+                    <span style={{ 
+                      backgroundColor: '#fee2e2', 
+                      textDecoration: 'line-through',
+                      padding: '0.125rem 0.25rem',
+                      borderRadius: '0.25rem'
+                    }}>
+                      {correction.original}
+                    </span>
+                    {' → '}
+                    <span style={{ 
+                      backgroundColor: '#d1fae5',
+                      color: '#065f46',
+                      padding: '0.125rem 0.25rem',
+                      borderRadius: '0.25rem',
+                      fontWeight: '500'
+                    }}>
+                      {correction.corrected}
+                    </span>
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>
+                    {correction.explanation}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+    }
+
+    if (!hasCorrections) {
+      return (
+        <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
+          <p style={{ color: '#16a34a', fontWeight: '500', marginBottom: '0.5rem' }}>
+            No issues found
+          </p>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+            Your text looks grammatically correct!
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {corrections.map((correction, index) => (
+          <div
+            key={index}
+            style={{
+              padding: '1rem',
+              borderBottom: index < corrections.length - 1 ? '1px solid #e5e7eb' : 'none',
+              backgroundColor: '#ffffff'
+            }}
+          >
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '1rem',
+                fontSize: '0.75rem',
+                fontWeight: '500',
+                display: 'inline-block',
+                marginBottom: '0.5rem'
+              }}>
+                {correction.ruleId || 'Grammar'}
+              </div>
+              <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>
+                <span style={{ 
+                  backgroundColor: '#fee2e2', 
+                  textDecoration: 'line-through',
+                  padding: '0.125rem 0.25rem',
+                  borderRadius: '0.25rem'
+                }}>
+                  {currentContent.substring(correction.offset, correction.offset + correction.length)}
+                </span>
+                {' → '}
+                <span style={{ 
+                  backgroundColor: '#d1fae5',
+                  color: '#065f46',
+                  padding: '0.125rem 0.25rem',
+                  borderRadius: '0.25rem',
+                  fontWeight: '500'
+                }}>
+                                     {correction.corrected || (correction.replacements && correction.replacements[0] ? correction.replacements[0].value : 'N/A')}
+                </span>
+              </p>
+              {correction.message && (
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>
+                  {correction.message}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderStats = () => {
+    if (!hasStats) {
+      return (
+        <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+            No statistics available
+          </p>
+        </div>
+      );
+    }
+
+    const statsData = [
+      { label: 'Words', value: stats.words, icon: '📝' },
+      { label: 'Characters', value: stats.characters, icon: '🔤' },
+      { label: 'Sentences', value: stats.sentences, icon: '📄' },
+      { label: 'Issues Found', value: corrections ? corrections.length : 0, icon: '🔍' }
+    ];
+
+    return (
+      <div style={{ padding: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          {statsData.map((stat, index) => (
+            <div
+              key={index}
+              style={{
+                padding: '1rem',
+                backgroundColor: '#f8fafc',
+                borderRadius: '0.5rem',
+                border: '1px solid #e2e8f0',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>
+                {stat.icon}
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>
+                {stat.value.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSuggestions = () => {
+    if (aiLoading) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid #e5e7eb',
+              borderTopColor: '#10b981',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 1rem'
+            }}
+          />
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+            Getting AI suggestions...
+          </p>
+        </div>
+      );
+    }
+
+    if (!hasSuggestions) {
+      return (
+        <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🤖</div>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>
+            No AI suggestions available
+          </p>
+          <button
+            onClick={() => onManualCheck && onManualCheck()}
+            style={{
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.75rem',
+              cursor: 'pointer'
+            }}
+          >
+            Get AI Suggestions
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {suggestions.map((suggestion, index) => (
+          <div
+            key={index}
+            style={{
+              padding: '1rem',
+              borderBottom: index < suggestions.length - 1 ? '1px solid #e5e7eb' : 'none',
+              backgroundColor: '#ffffff'
+            }}
+          >
+            <div style={{
+              backgroundColor: '#ecfdf5',
+              color: '#047857',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '1rem',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              display: 'inline-block',
+              marginBottom: '0.5rem'
+            }}>
+              AI Suggestion
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.5' }}>
+              {suggestion}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Check if API key is configured
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  const isApiKeyConfigured = apiKey && apiKey.startsWith('sk-');
+
+  if (!hasContent) {
+    return (
+      <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📝</div>
+        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem' }}>
+          Grammar Assistant
+        </h3>
+        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+          Start typing in the editor to see grammar suggestions and corrections here.
+        </p>
+        {!isApiKeyConfigured && (
+          <div style={{
+            backgroundColor: '#fef3c7',
+            border: '1px solid #fbbf24',
+            borderRadius: '0.375rem',
+            padding: '1rem',
+            marginTop: '1rem'
+          }}>
+            <h4 style={{ color: '#92400e', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              🔑 API Key Setup Required
+            </h4>
+            <p style={{ color: '#92400e', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+              To enable AI-powered grammar checking:
+            </p>
+            <ol style={{ color: '#92400e', fontSize: '0.75rem', marginLeft: '1rem', lineHeight: '1.4' }}>
+              <li>Get your API key from <a href="https://platform.openai.com/account/api-keys" target="_blank" style={{ color: '#1d4ed8' }}>OpenAI</a></li>
+              <li>Open the <code>.env</code> file in your project root</li>
+              <li>Replace <code>your-openai-api-key-here</code> with your actual API key</li>
+              <li>Restart the development server</li>
+            </ol>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ 
+      backgroundColor: '#ffffff',
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 'fit-content'
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '1rem',
+        borderBottom: '1px solid #e5e7eb',
+        backgroundColor: '#f8fafc'
+      }}>
+                 <h3 style={{ 
+           fontSize: '1rem', 
+           fontWeight: '600', 
+           color: '#1f2937',
+           marginBottom: '0.75rem'
+         }}>
+           Grammar Assistant
+         </h3>
+        
+        {/* Tab Navigation */}
+        <div style={{ display: 'flex', gap: '0.25rem' }}>
+          {renderTabButton('corrections', 'Issues', hasCorrections ? corrections.length : 0, false)}
+          {renderTabButton('stats', 'Stats')}
+          {renderTabButton('suggestions', 'AI Tips', hasSuggestions ? suggestions.length : 0, aiLoading)}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {activeTab === 'corrections' && renderCorrections()}
+        {activeTab === 'stats' && renderStats()}
+        {activeTab === 'suggestions' && renderSuggestions()}
+      </div>
+
+      {/* Actions */}
+      {hasContent && (
+        <div style={{
+          padding: '1rem',
+          borderTop: '1px solid #e5e7eb',
+          backgroundColor: '#f8fafc'
+        }}>
+          <button
+            onClick={() => onManualCheck && onManualCheck()}
+            disabled={grammarLoading}
+            style={{
+              width: '100%',
+              backgroundColor: grammarLoading ? '#9ca3af' : '#3b82f6',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem',
+              borderRadius: '0.375rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              cursor: grammarLoading ? 'not-allowed' : 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+          >
+            {grammarLoading ? 'Checking Grammar...' : '🔍 Check Grammar'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default GrammarSuggestions; 
