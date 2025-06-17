@@ -115,8 +115,8 @@ export const checkWithLanguageTool = async (text, language = 'en-US', enabledOnl
     };
   }
 
-  // Simulate API delay for realistic behavior
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // Optimized for fast response - no artificial delay needed
+  // await new Promise(resolve => setTimeout(resolve, 300));
 
   // Filter suggestions based on text content
   const relevantSuggestions = DEMO_SUGGESTIONS.filter(suggestion => {

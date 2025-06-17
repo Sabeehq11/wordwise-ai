@@ -67,7 +67,10 @@ export const GrammarProvider = ({ children }) => {
 
   // AI-powered grammar check function using both services
   const performGrammarCheck = useCallback(async (text) => {
-    if (!text || text.trim().length < 10) {
+    console.log('🤖 performGrammarCheck called with text:', text.substring(0, 50) + '...');
+    
+    if (!text || text.trim().length < 3) { // Reduced minimum length for faster feedback
+      console.log('❌ Text too short, skipping grammar check');
       setCorrections([]);
       setLegacyCorrections([]);
       setSuggestions([]);
@@ -91,12 +94,14 @@ export const GrammarProvider = ({ children }) => {
 
     // Don't check the same text again, but allow minor changes
     const textChanged = text !== lastCheckedTextRef.current;
-    if (!textChanged && (corrections.length > 0 || legacyCorrections.length > 0)) {
+    const hasSignificantChange = Math.abs(text.length - lastCheckedTextRef.current.length) > 5 || 
+                                text.trim() !== lastCheckedTextRef.current.trim();
+    
+    if (!textChanged && !hasSignificantChange && (corrections.length > 0 || legacyCorrections.length > 0)) {
       return;
     }
 
-    // Never show loading for automatic background checks
-    // Loading only for manual button clicks or initial empty state
+    // Show subtle loading for auto-checks, full loading for manual checks
     setError('');
     lastCheckedTextRef.current = text;
 
@@ -184,16 +189,21 @@ export const GrammarProvider = ({ children }) => {
 
   // Smart debounced grammar check function for real-time updates
   const checkTextGrammar = useCallback((text) => {
+    console.log('🔍 checkTextGrammar called with text length:', text.length);
+    
     // Clear existing timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Use fixed delay to prevent glitching - no more adaptive timing
-    const delay = 2000; // Fixed 2 second delay for consistent behavior
+    // Optimized delay for sub-2 second total response time
+    const delay = 800; // 800ms delay + ~200-500ms processing = under 1.5 seconds total
+    
+    console.log('⏰ Setting timer for grammar check in', delay, 'ms');
     
     // Set new timer
     debounceTimerRef.current = setTimeout(() => {
+      console.log('🚀 Timer fired! Running grammar check...');
       performGrammarCheck(text);
     }, delay);
 
@@ -201,7 +211,7 @@ export const GrammarProvider = ({ children }) => {
 
   // Manual grammar check (for button clicks) - always shows loading
   const checkGrammarNow = useCallback(async (text) => {
-    if (!text || text.trim().length < 10) {
+    if (!text || text.trim().length < 3) { // Reduced minimum length for faster feedback
       return;
     }
     

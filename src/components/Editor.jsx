@@ -71,7 +71,8 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
 
   // Real-time grammar checking with smart debouncing
   useEffect(() => {
-    if (content.trim() && content.length > 10) {
+    if (content.trim() && content.length > 5) { // Reduced minimum length for faster feedback
+      console.log('🔍 Auto-checking triggered for content:', content.substring(0, 50) + '...');
       checkTextGrammar(content);
     }
   }, [content, checkTextGrammar]);
@@ -126,6 +127,19 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
     if (content.trim() && checkGrammarNow) {
       await checkGrammarNow(content);
     }
+  };
+
+  // Apply a grammar correction to the text
+  const handleApplyCorrection = (original, corrected) => {
+    const newContent = content.replace(original, corrected);
+    setContent(newContent);
+    
+    // Trigger a new grammar check after applying correction
+    setTimeout(() => {
+      if (checkGrammarNow) {
+        checkGrammarNow(newContent);
+      }
+    }, 100);
   };
 
   // Clear localStorage data
@@ -225,6 +239,7 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
             <GrammarSuggestions 
               onManualCheck={handleManualGrammarCheck}
               currentContent={content}
+              onApplyCorrection={handleApplyCorrection}
             />
           </div>
         )}
@@ -352,6 +367,7 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
         <GrammarSuggestions 
           onManualCheck={handleManualGrammarCheck}
           currentContent={content}
+          onApplyCorrection={handleApplyCorrection}
         />
       </div>
     </div>

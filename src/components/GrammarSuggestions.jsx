@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useGrammar } from '../contexts/GrammarContext';
+import ApplyButton from './ApplyButton';
 
-const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
+const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }) => {
   const { corrections, legacyCorrections, stats, suggestions, legacySuggestions, loading: grammarLoading } = useGrammar();
   const aiLoading = false; // AI suggestions use the same loading state
   const [activeTab, setActiveTab] = useState('corrections');
@@ -126,6 +127,54 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
           type: 'spelling'
         });
       }
+      if (lowerText.includes('teh ')) {
+        demoCorrections.push({
+          original: 'teh',
+          corrected: 'the',
+          explanation: 'Spelling correction: "the" is the correct spelling.',
+          type: 'spelling'
+        });
+      }
+      if (lowerText.includes('dont')) {
+        demoCorrections.push({
+          original: 'dont',
+          corrected: "don't",
+          explanation: 'Contractions need an apostrophe. "Don\'t" is short for "do not".',
+          type: 'punctuation'
+        });
+      }
+      if (lowerText.includes('wont')) {
+        demoCorrections.push({
+          original: 'wont',
+          corrected: "won't",
+          explanation: 'Contractions need an apostrophe. "Won\'t" is short for "will not".',
+          type: 'punctuation'
+        });
+      }
+      if (lowerText.includes('cant')) {
+        demoCorrections.push({
+          original: 'cant',
+          corrected: "can't",
+          explanation: 'Contractions need an apostrophe. "Can\'t" is short for "cannot".',
+          type: 'punctuation'
+        });
+      }
+      if (lowerText.includes('alot')) {
+        demoCorrections.push({
+          original: 'alot',
+          corrected: 'a lot',
+          explanation: '"A lot" should be written as two separate words, not "alot".',
+          type: 'spelling'
+        });
+      }
+      if (lowerText.includes('recieve')) {
+        demoCorrections.push({
+          original: 'recieve',
+          corrected: 'receive',
+          explanation: 'Spelling correction: "receive" follows the "i before e except after c" rule.',
+          type: 'spelling'
+        });
+      }
 
       if (demoCorrections.length > 0) {
         return (
@@ -183,9 +232,15 @@ const GrammarSuggestions = ({ onManualCheck, currentContent }) => {
                       {correction.corrected}
                     </span>
                   </p>
-                  <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic', marginBottom: '0.5rem' }}>
                     {correction.explanation}
                   </p>
+                  <ApplyButton
+                    original={correction.original}
+                    corrected={correction.corrected}
+                    onApply={onApplyCorrection}
+                    type="demo"
+                  />
                 </div>
               </div>
             ))}
