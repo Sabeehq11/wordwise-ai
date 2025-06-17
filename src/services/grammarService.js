@@ -1,6 +1,10 @@
 import OpenAI from 'openai';
 
+// Force cache bust for deployment - timestamp: 2025-01-17T22:30:00Z
+const DEPLOYMENT_VERSION = "v2.1.0";
+
 // Initialize OpenAI (you'll need to add your API key)
+// Cache-bust: Updated for fresh deployment
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // Only for demo - use backend in production
