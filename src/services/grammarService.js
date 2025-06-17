@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 // Initialize OpenAI (you'll need to add your API key)
 const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY || 'your-openai-api-key-here',
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // Only for demo - use backend in production
 });
 
@@ -304,5 +304,5 @@ export const getWritingSuggestions = async (text, context = 'general') => {
 // Check if OpenAI API key is configured
 export const isGrammarCheckingEnabled = () => {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  return apiKey && apiKey !== 'your-openai-api-key-here';
+  return apiKey && apiKey.startsWith('sk-');
 }; 
