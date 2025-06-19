@@ -111,6 +111,53 @@ const Navbar = () => {
                   ✨ TRY IT
                 </button>
               </Link>
+              
+              {/* User Profile with Avatar */}
+              <Link to="/account" style={{ textDecoration: 'none' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s',
+                  cursor: 'pointer'
+                }}>
+                  <div style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                  }}>
+                    {currentUser.displayName 
+                      ? currentUser.displayName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
+                      : currentUser.email?.charAt(0).toUpperCase() || 'U'
+                    }
+                  </div>
+                  <span style={{
+                    color: 'white',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    maxWidth: '120px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {currentUser.displayName || currentUser.email?.split('@')[0]}
+                  </span>
+                </div>
+              </Link>
+              
               <button 
                 onClick={handleLogout}
                 style={{

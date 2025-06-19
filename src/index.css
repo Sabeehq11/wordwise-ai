@@ -475,6 +475,40 @@ select:focus, input:focus, textarea:focus {
   }
 }
 
+/* Enhanced button animations */
+@keyframes buttonGlow {
+  0% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.6), 0 0 30px rgba(102, 126, 234, 0.4); }
+  100% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.4); }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 @keyframes loading-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -637,4 +671,61 @@ button, a {
 
 button:hover {
   transform: translate3d(0, -1px, 0);
+}
+
+/* Enhanced navbar styling */
+.navbar a:hover div[style*="rgba(255, 255, 255, 0.15)"] {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.2) 100%) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+/* Enhanced form styling with animations */
+.form-container {
+  animation: fadeInScale 0.6s ease-out;
+}
+
+/* Card animations */
+.suggestions-panel {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.editor-container {
+  animation: slideInUp 0.4s ease-out 0.1s both;
+}
+
+/* Beautiful button glow effect for primary actions */
+button[style*="background-color: #3b82f6"]:hover,
+button[style*="background: linear-gradient(135deg, #667eea"]:hover {
+  animation: buttonGlow 2s ease-in-out infinite;
+}
+
+/* Enhanced loading spinners */
+div[style*="animation: spin"] {
+  animation: loading-spin 1s linear infinite !important;
+}
+
+/* Smooth page transitions */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Account page specific enhancements */
+div[style*="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"] {
+  position: relative;
+  overflow: hidden;
+}
+
+div[style*="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"]:before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+  pointer-events: none;
 }

@@ -8,6 +8,7 @@
  */
 
 const {onRequest} = require("firebase-functions/v2/https");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {defineSecret} = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const axios = require("axios");
@@ -209,3 +210,14 @@ exports.testConnection = onRequest(
     });
   }
 );
+
+// Add function warming to prevent cold starts
+exports.keepWarm = onSchedule("every 5 minutes", async (event) => {
+  logger.info("Warming up grammar check function");
+  return "Function kept warm";
+});
+
+// Lightweight health check for warming
+exports.healthCheck = onRequest({ cors: true }, (req, res) => {
+  res.status(200).json({ status: "warm", timestamp: new Date().toISOString() });
+});

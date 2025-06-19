@@ -8,6 +8,7 @@ import TryIt from './pages/TryIt';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import Account from './pages/Account';
 import './App.css';
 
 function App() {
@@ -26,6 +27,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/account" 
+                element={
+                  <ProtectedRoute>
+                    <Account />
                   </ProtectedRoute>
                 } 
               />

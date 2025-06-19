@@ -688,9 +688,8 @@ const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }
     );
   };
 
-  // Check if API key is configured
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  const isApiKeyConfigured = apiKey && apiKey.startsWith('sk-');
+     // Use secure backend service - no API key needed in frontend
+     const isApiKeyConfigured = true; // Always true since we use secure backend
 
   if (!hasContent) {
     return (
@@ -776,7 +775,10 @@ const GrammarSuggestions = ({ onManualCheck, currentContent, onApplyCorrection }
           color: 'white',
           textAlign: 'center',
           borderRadius: '0 0 1rem 1rem',
-          marginBottom: '0.5rem'
+          marginBottom: '0.5rem',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
         }}>
           <div style={{ 
             fontSize: '1.75rem', 
