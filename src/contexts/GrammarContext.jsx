@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { checkGrammarWithOpenAI, isOpenAIAvailable, testOpenAIConnection } from '../services/openaiService';
+import { checkGrammarSecurely, isSecureGrammarAvailable, testSecureConnection } from '../services/secureGrammarService';
 import { checkGrammar as checkGrammarWithLegacyService } from '../services/grammarService';
 
 const GrammarContext = createContext();
@@ -43,25 +43,27 @@ export const GrammarProvider = ({ children }) => {
 
   const checkServiceAvailability = async () => {
     try {
-      // Check if API key is available first
-      const hasApiKey = isOpenAIAvailable();
-      if (!hasApiKey) {
+      // Check if secure grammar service is available
+      const hasSecureService = isSecureGrammarAvailable();
+      if (!hasSecureService) {
         setServiceStatus('unavailable');
-        setError('OpenAI API key not configured. Please set VITE_OPENAI_API_KEY in your environment variables.');
+        setError('Secure grammar service not available. Please deploy Firebase Functions.');
         return;
       }
 
       // Test the actual connection
-      const testResult = await testOpenAIConnection();
+      const testResult = await testSecureConnection();
       setServiceStatus(testResult.success ? 'available' : 'unavailable');
       
       if (!testResult.success) {
-        setError(`OpenAI API connection failed: ${testResult.error}`);
+        setError(`Secure grammar service connection failed: ${testResult.error}`);
+      } else {
+        setError(''); // Clear any previous errors
       }
     } catch (error) {
-      console.error('OpenAI service availability check failed:', error);
+      console.error('Secure grammar service availability check failed:', error);
       setServiceStatus('unavailable');
-      setError('Failed to connect to OpenAI API. Please check your configuration.');
+      setError('Failed to connect to secure grammar service. Please check your Firebase Functions deployment.');
     }
   };
 
@@ -108,7 +110,7 @@ export const GrammarProvider = ({ children }) => {
     try {
       // Call both services simultaneously
       const [modernResult, legacyResult] = await Promise.allSettled([
-        checkGrammarWithOpenAI(text),
+        checkGrammarSecurely(text),
         checkGrammarWithLegacyService(text)
       ]);
 
@@ -150,7 +152,7 @@ export const GrammarProvider = ({ children }) => {
 
       // Set error only if both services failed
       if (modernResult.status === 'rejected' && legacyResult.status === 'rejected') {
-        setError('Both AI grammar services are temporarily unavailable. Please check your API key and try again.');
+        setError('Both AI grammar services are temporarily unavailable. Please try again later.');
       }
 
       // Still provide basic stats even if both services fail
