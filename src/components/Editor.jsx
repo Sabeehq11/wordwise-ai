@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { updateDocument } from '../firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useGrammar } from '../contexts/GrammarContext';
 import GrammarSuggestions from './GrammarSuggestions';
 
-const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
+const Editor = ({ document, isPublic = false }) => {
   const { currentUser } = useAuth();
   const { checkTextGrammar, corrections, stats, loading: grammarLoading, checkGrammarNow } = useGrammar();
   
@@ -95,10 +95,8 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
       
       setLastSaved(new Date());
       
-      // Notify parent component if callback provided (deferred to prevent re-render flicker)
-      if (onDocumentUpdate) {
-        setTimeout(() => onDocumentUpdate(), 0);
-      }
+      // Real-time Firestore listeners handle document updates automatically
+      // No need for manual callbacks that can cause infinite loops
       
     } catch (error) {
       console.error('Save error:', error);
@@ -374,4 +372,4 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
   );
 };
 
-export default Editor; 
+export default memo(Editor); 
