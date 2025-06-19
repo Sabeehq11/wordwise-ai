@@ -67,7 +67,7 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [content]);
+  }, [content]); // Only depend on content to prevent infinite loops
 
   // Real-time grammar checking with smart debouncing
   useEffect(() => {
@@ -75,7 +75,7 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
       console.log('🔍 Auto-checking triggered for content:', content.substring(0, 50) + '...');
       checkTextGrammar(content);
     }
-  }, [content, checkTextGrammar]);
+  }, [content]); // Only depend on content to prevent function recreation loops
 
   const saveDocument = async () => {
     if (!document || !currentUser) {
