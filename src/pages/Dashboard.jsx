@@ -415,7 +415,7 @@ const Dashboard = () => {
                 ← Back to Documents
               </button>
             </div>
-            <Editor document={selectedDocument} onDocumentUpdate={loadDocuments} />
+            <Editor document={selectedDocument} />
           </div>
         )}
       </main>

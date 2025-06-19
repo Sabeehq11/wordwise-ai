@@ -67,7 +67,7 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [content, document, currentUser, isPublic]);
+  }, [content]);
 
   // Real-time grammar checking with smart debouncing
   useEffect(() => {
@@ -95,9 +95,9 @@ const Editor = ({ document, onDocumentUpdate, isPublic = false }) => {
       
       setLastSaved(new Date());
       
-      // Notify parent component if callback provided
+      // Notify parent component if callback provided (deferred to prevent re-render flicker)
       if (onDocumentUpdate) {
-        onDocumentUpdate();
+        setTimeout(() => onDocumentUpdate(), 0);
       }
       
     } catch (error) {
