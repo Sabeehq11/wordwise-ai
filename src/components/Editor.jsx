@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { FiEdit3, FiCheck, FiClock, FiZap, FiTrash2, FiArrowLeft } from 'react-icons/fi';
 import GrammarSuggestions from './GrammarSuggestions';
+import DocumentToolbar from './DocumentToolbar';
 import { useGrammar } from '../contexts/GrammarContext';
 
-const Editor = ({ theme, document, isPublic }) => {
+const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
   const { currentUser } = useAuth();
   const [text, setText] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -395,6 +396,15 @@ const Editor = ({ theme, document, isPublic }) => {
                   </div>
                 )}
 
+                {/* Document Toolbar - Only show for logged in users */}
+                {currentUser && (
+                  <DocumentToolbar 
+                    text={text} 
+                    setText={setText} 
+                    isVisible={true} 
+                  />
+                )}
+
                 {/* Text Area */}
                 <div style={{ position: 'relative' }}>
                   <textarea
@@ -695,7 +705,23 @@ const Editor = ({ theme, document, isPublic }) => {
             
             {!isPublic && (
               <button 
-                onClick={() => window.history.back()}
+                onClick={() => {
+                  console.log('Back to Documents button clicked');
+                  if (onBackToDashboard) {
+                    // We're in the Dashboard context, use the callback
+                    console.log('Using Dashboard callback');
+                    onBackToDashboard();
+                  } else {
+                    // We're in a standalone context, navigate to dashboard
+                    console.log('Navigating to dashboard via window.location');
+                    try {
+                      window.location.href = '/dashboard';
+                    } catch (error) {
+                      console.error('Navigation error:', error);
+                      window.location.assign('/dashboard');
+                    }
+                  }
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -849,6 +875,15 @@ const Editor = ({ theme, document, isPublic }) => {
                   </button>
                 </div>
               </div>
+
+              {/* Document Toolbar - Only show for logged in users */}
+              {currentUser && (
+                <DocumentToolbar 
+                  text={text} 
+                  setText={setText} 
+                  isVisible={true} 
+                />
+              )}
 
               {/* Text Area */}
               <div style={{ position: 'relative' }}>

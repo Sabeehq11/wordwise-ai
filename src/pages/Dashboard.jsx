@@ -412,7 +412,13 @@ const Dashboard = () => {
                 ← Back to Documents
               </button>
             </div>
-            <Editor document={selectedDocument} />
+            <Editor 
+              document={selectedDocument} 
+              onBackToDashboard={() => {
+                setShowEditor(false);
+                setSelectedDocument(null);
+              }} 
+            />
           </div>
         )}
       </main>
