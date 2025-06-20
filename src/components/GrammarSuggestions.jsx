@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiZap, FiCheck, FiBookOpen, FiEdit3, FiTarget, FiBook, FiAlertCircle } from 'react-icons/fi';
 
-const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, theme, isEmbedded = false, hasText = false }) => {
+const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, theme, isEmbedded = false, hasText = false, isPostFixState = false, isApplyingFix = false }) => {
   // Only show suggestions if there are actual suggestions AND there's text to analyze
   const mockSuggestions = (suggestions.length > 0 && hasText) ? suggestions : [];
 
@@ -81,7 +81,7 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
               Writing Suggestions
             </h3>
             <p style={{ color: '#636e72', fontSize: '16px', lineHeight: '1.6' }}>
-              Analyzing your text for improvements...
+              {isApplyingFix ? 'Applying grammar fix...' : 'Analyzing your text for improvements...'}
             </p>
           </div>
         </div>
@@ -99,10 +99,10 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
               margin: '0 auto 24px auto'
             }}></div>
             <h4 style={{ fontSize: '18px', fontWeight: '600', color: '#2d3436', marginBottom: '8px' }}>
-              Analyzing...
+              {isApplyingFix ? 'Applying Fix...' : 'Analyzing...'}
             </h4>
             <p style={{ color: '#636e72', fontSize: '14px' }}>
-              Reviewing your writing for suggestions
+              {isApplyingFix ? 'Updating your text with the grammar fix' : 'Reviewing your writing for suggestions'}
             </p>
           </div>
         </div>
@@ -221,10 +221,16 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
                 <FiCheck style={{ width: '40px', height: '40px', color: 'white' }} />
               </div>
               <h4 style={{ fontSize: '24px', fontWeight: '700', color: '#2d3436', marginBottom: '8px' }}>
-                Perfect Writing!
+                {(hasText && isPostFixState) ? '✅ No grammar issues found.' : (hasText ? 'Perfect Writing!' : 'Perfect Writing!')}
               </h4>
               <p style={{ color: '#636e72', fontSize: '16px', lineHeight: '1.6' }}>
-                No grammar or style issues found in your text.
+                {(hasText && isPostFixState) 
+                  ? 'Great job! Your text looks good. Continue writing to get more suggestions.'
+                  : (hasText 
+                    ? 'No grammar or style issues found in your text.'
+                    : 'Start writing to get AI-powered grammar suggestions.'
+                  )
+                }
               </p>
             </div>
           </div>

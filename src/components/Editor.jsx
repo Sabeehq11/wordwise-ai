@@ -12,10 +12,19 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [autoSave, setAutoSave] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
   const { suggestions: grammarSuggestions, isLoading, checkGrammar } = useGrammar();
   const debounceTimer = useRef(null);
+  
+  // Track applied fixes and prevent immediate re-checking
+  const [appliedFixes, setAppliedFixes] = useState([]);
+  const [lastAppliedFixTime, setLastAppliedFixTime] = useState(null);
+  const [isPostFixState, setIsPostFixState] = useState(false);
+  const [isApplyingFix, setIsApplyingFix] = useState(false);
+  const [userEditedAfterFix, setUserEditedAfterFix] = useState(false);
+  const appliedFixesTimeoutRef = useRef({});
 
   // Initialize text from document prop when editing existing documents
   useEffect(() => {
@@ -25,6 +34,50 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
       setCharCount(document.charCount || 0);
     }
   }, [document]);
+
+  // Function to check if a suggestion conflicts with recently applied fixes
+  const isConflictingSuggestion = (suggestion) => {
+    return appliedFixes.some(appliedFix => {
+      // Check if this suggestion would reverse or conflict with a recent fix
+      const suggestionOrigLower = suggestion.original.toLowerCase().trim();
+      const suggestionSuggestedLower = suggestion.suggested.toLowerCase().trim();
+      const appliedOrigLower = appliedFix.original.toLowerCase().trim();
+      const appliedSuggestedLower = appliedFix.suggested.toLowerCase().trim();
+      
+      // Consider it conflicting if:
+      // 1. It suggests reverting back to the original text
+      const isRevert = suggestionSuggestedLower === appliedOrigLower && 
+                      suggestionOrigLower === appliedSuggestedLower;
+      
+      // 2. It tries to change something that was just fixed
+      const changesRecentFix = suggestionOrigLower.includes(appliedSuggestedLower) ||
+                              appliedSuggestedLower.includes(suggestionOrigLower);
+      
+      // 3. It's trying to apply the same fix again
+      const isDuplicate = suggestionOrigLower === appliedOrigLower &&
+                         suggestionSuggestedLower === appliedSuggestedLower;
+      
+      return isRevert || changesRecentFix || isDuplicate;
+    });
+  };
+
+  // Filter out conflicting suggestions
+  const getFilteredSuggestions = (rawSuggestions) => {
+    if (appliedFixes.length === 0) {
+      return rawSuggestions;
+    }
+    
+    const filtered = rawSuggestions.filter(suggestion => {
+      const isConflicting = isConflictingSuggestion(suggestion);
+      if (isConflicting) {
+        console.log('🚫 Filtered out conflicting suggestion:', suggestion.original, '->', suggestion.suggested);
+      }
+      return !isConflicting;
+    });
+    
+    console.log(`📊 Filtered suggestions: ${rawSuggestions.length} -> ${filtered.length} (removed ${rawSuggestions.length - filtered.length} conflicts)`);
+    return filtered;
+  };
 
   // Comprehensive grammar check function that analyzes actual user text
   const handleGrammarCheck = async () => {
@@ -52,7 +105,9 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
           position: { start: 0, end: correction.original.length } // API doesn't provide positions
         }));
         
-        setSuggestions(apiSuggestions);
+        // Filter out conflicting suggestions
+        const filteredSuggestions = getFilteredSuggestions(apiSuggestions);
+        setSuggestions(filteredSuggestions);
         setIsChecking(false);
         return;
       }
@@ -60,31 +115,98 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
       console.log('API not available, using smart mock analysis:', error.message);
     }
     
-    // Fallback to smart mock analysis
+    // Enhanced smart mock analysis for better position tracking
     setTimeout(() => {
       const mockSuggestions = [];
       const textLower = text.toLowerCase();
       const originalText = text;
       
-      console.log('Analyzing text:', originalText);
+      console.log('🔍 Analyzing text:', originalText);
+      
+      // Helper function to add suggestion with better error handling
+      const addSuggestion = (id, type, original, suggested, explanation, start, end) => {
+        // Verify position accuracy
+        const actualText = originalText.substring(start, end);
+        if (actualText.toLowerCase() === original.toLowerCase()) {
+          mockSuggestions.push({
+            id: id,
+            type: type,
+            original: actualText, // Use actual text from position to maintain case
+            suggested: suggested,
+            explanation: explanation,
+            position: { start: start, end: end }
+          });
+          console.log(`✅ Added suggestion: "${actualText}" -> "${suggested}" at [${start}, ${end}]`);
+        } else {
+          console.log(`❌ Position error for "${original}": expected at [${start}, ${end}] but found "${actualText}"`);
+        }
+      };
       
       // 1. Check for "dont" without apostrophe
       if (textLower.includes('dont') && !textLower.includes("don't")) {
         const regex = /\bdont\b/gi;
         const matches = [...originalText.matchAll(regex)];
         matches.forEach((match, index) => {
-          mockSuggestions.push({
-            id: `dont-${index}`,
-            type: 'punctuation',
-            original: match[0],
-            suggested: "don't",
-            explanation: 'Contractions need an apostrophe. "Don\'t" is short for "do not".',
-            position: { start: match.index, end: match.index + match[0].length }
-          });
+          addSuggestion(
+            `dont-${index}`,
+            'punctuation',
+            match[0],
+            "don't",
+            'Contractions need an apostrophe. "Don\'t" is short for "do not".',
+            match.index,
+            match.index + match[0].length
+          );
         });
       }
       
-      // 2. Check for "h" at start of sentence (should be "he")
+      // 2. Sentence-level corrections
+      
+      // Fix "i am problem" -> "I am a problem"
+      const iAmProblemRegex = /\bi\s+am\s+problem\b/gi;
+      const iAmProblemMatches = [...originalText.matchAll(iAmProblemRegex)];
+      iAmProblemMatches.forEach((match, index) => {
+        addSuggestion(
+          `i-am-problem-${index}`,
+          'grammar',
+          match[0],
+          'I am a problem',
+          'Added missing article "a" and capitalized "I".',
+          match.index,
+          match.index + match[0].length
+        );
+      });
+      
+      // Fix "my brother bigger problem" -> "my brother is a bigger problem"
+      const brotherProblemRegex = /\bmy\s+brother\s+bigger\s+problem\b/gi;
+      const brotherProblemMatches = [...originalText.matchAll(brotherProblemRegex)];
+      brotherProblemMatches.forEach((match, index) => {
+        addSuggestion(
+          `brother-problem-${index}`,
+          'grammar',
+          match[0],
+          'my brother is a bigger problem',
+          'Added missing verb "is" and article "a".',
+          match.index,
+          match.index + match[0].length
+        );
+      });
+      
+      // Fix "he anoying very" -> "he is very annoying"
+      const heAnoyingRegex = /\bhe\s+anoying\s+very\b/gi;
+      const heAnoyingMatches = [...originalText.matchAll(heAnoyingRegex)];
+      heAnoyingMatches.forEach((match, index) => {
+        addSuggestion(
+          `he-annoying-${index}`,
+          'grammar',
+          match[0],
+          'he is very annoying',
+          'Corrected spelling of "annoying", added missing verb "is", and fixed word order.',
+          match.index,
+          match.index + match[0].length
+        );
+      });
+      
+      // Check for "h" at start of sentence (should be "he")
       if (textLower.match(/\b\.?\s*h\s+/)) {
         const regex = /(\.\s*|^)h(\s+)/gi;
         const matches = [...originalText.matchAll(regex)];
@@ -92,31 +214,33 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
           const fullMatch = match[0];
           const beforeH = match[1] || '';
           const afterH = match[2];
-          mockSuggestions.push({
-            id: `h-correction-${index}`,
-            type: 'spelling',
-            original: fullMatch,
-            suggested: beforeH + 'He' + afterH,
-            explanation: 'This appears to be a typo. "He" is the correct spelling.',
-            position: { start: match.index, end: match.index + fullMatch.length }
-          });
+          addSuggestion(
+            `h-correction-${index}`,
+            'spelling',
+            fullMatch,
+            beforeH + 'He' + afterH,
+            'This appears to be a typo. "He" is the correct spelling.',
+            match.index,
+            match.index + fullMatch.length
+          );
         });
       }
       
-      // 3. Check for "brother annoying very" pattern (wrong word order)
+      // 3. Legacy pattern checks (keeping for backward compatibility)
       if (textLower.includes('brother annoying very')) {
         const regex = /(my\s+)?brother\s+annoying\s+very/gi;
         const matches = [...originalText.matchAll(regex)];
         matches.forEach((match, index) => {
           const prefix = match[1] || '';
-          mockSuggestions.push({
-            id: `word-order-${index}`,
-            type: 'grammar',
-            original: match[0],
-            suggested: prefix + 'brother is very annoying',
-            explanation: 'Word order should be "brother is very annoying" for proper grammar.',
-            position: { start: match.index, end: match.index + match[0].length }
-          });
+          addSuggestion(
+            `word-order-${index}`,
+            'grammar',
+            match[0],
+            prefix + 'brother is very annoying',
+            'Word order should be "brother is very annoying" for proper grammar.',
+            match.index,
+            match.index + match[0].length
+          );
         });
       }
       
@@ -125,14 +249,15 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
         const regex = /stop\s+bother(?!\w)/gi;
         const matches = [...originalText.matchAll(regex)];
         matches.forEach((match, index) => {
-          mockSuggestions.push({
-            id: `gerund-${index}`,
-            type: 'grammar',
-            original: match[0],
-            suggested: 'stop bothering',
-            explanation: 'Use the gerund form "bothering" after "stop".',
-            position: { start: match.index, end: match.index + match[0].length }
-          });
+          addSuggestion(
+            `gerund-${index}`,
+            'grammar',
+            match[0],
+            'stop bothering',
+            'Use the gerund form "bothering" after "stop".',
+            match.index,
+            match.index + match[0].length
+          );
         });
       }
       
@@ -145,14 +270,15 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
           // Find the actual position of this sentence in the original text
           const sentenceStart = originalText.indexOf(trimmed, currentPos);
           if (sentenceStart >= 0) {
-            mockSuggestions.push({
-              id: `capitalize-${index}`,
-              type: 'grammar',
-              original: trimmed[0],
-              suggested: trimmed[0].toUpperCase(),
-              explanation: 'Sentences should start with a capital letter.',
-              position: { start: sentenceStart, end: sentenceStart + 1 }
-            });
+            addSuggestion(
+              `capitalize-${index}`,
+              'grammar',
+              trimmed[0],
+              trimmed[0].toUpperCase(),
+              'Sentences should start with a capital letter.',
+              sentenceStart,
+              sentenceStart + 1
+            );
           }
         }
         currentPos += sentence.length + 1; // +1 for the delimiter
@@ -166,32 +292,60 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
         { wrong: 'cant', correct: "can't", explanation: 'Contractions need an apostrophe.' },
         { wrong: 'wont', correct: "won't", explanation: 'Contractions need an apostrophe.' },
         { wrong: 'shouldnt', correct: "shouldn't", explanation: 'Contractions need an apostrophe.' },
-        { wrong: 'wouldnt', correct: "wouldn't", explanation: 'Contractions need an apostrophe.' }
+        { wrong: 'wouldnt', correct: "wouldn't", explanation: 'Contractions need an apostrophe.' },
+        { wrong: 'anoying', correct: 'annoying', explanation: 'Correct spelling is "annoying".' }
       ];
       
       spellingCorrections.forEach(correction => {
         const regex = new RegExp(`\\b${correction.wrong}\\b`, 'gi');
         const matches = [...originalText.matchAll(regex)];
         matches.forEach((match, index) => {
-          mockSuggestions.push({
-            id: `spelling-${correction.wrong}-${index}`,
-            type: 'spelling',
-            original: match[0],
-            suggested: correction.correct,
-            explanation: correction.explanation,
-            position: { start: match.index, end: match.index + match[0].length }
-          });
+          addSuggestion(
+            `spelling-${correction.wrong}-${index}`,
+            'spelling',
+            match[0],
+            correction.correct,
+            correction.explanation,
+            match.index,
+            match.index + match[0].length
+          );
         });
       });
       
-      console.log('Generated suggestions:', mockSuggestions);
-      setSuggestions(mockSuggestions);
+      console.log('🎯 Generated suggestions:', mockSuggestions.length);
+      mockSuggestions.forEach(s => console.log(`  - "${s.original}" -> "${s.suggested}" at [${s.position.start}, ${s.position.end}]`));
+      
+      // Filter out conflicting suggestions
+      const filteredSuggestions = getFilteredSuggestions(mockSuggestions);
+      console.log('📊 Final suggestions after filtering:', filteredSuggestions.length);
+      setSuggestions(filteredSuggestions);
       setIsChecking(false);
     }, 1500);
   };
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // Clear debounce timer
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+      
+      // Clear all applied fixes timeouts
+      Object.values(appliedFixesTimeoutRef.current).forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+    };
+  }, []);
+
   // Auto-check grammar when text changes (including from document loading)
   useEffect(() => {
+    // Skip grammar check if currently applying a fix or in post-fix state without user edits
+    if (isApplyingFix || (isPostFixState && !userEditedAfterFix)) {
+      console.log('⏭️ Skipping grammar check - applying fix or in post-fix state');
+      return;
+    }
+    
     if (text.trim().length > 0) {
       // Clear previous timer
       if (debounceTimer.current) {
@@ -200,6 +354,7 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
       
       // Set new timer for grammar check
       debounceTimer.current = setTimeout(() => {
+        console.log('📝 Auto-checking grammar after text change');
         handleGrammarCheck();
       }, 2000); // 2 second delay for auto-check
     } else {
@@ -211,37 +366,156 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [text]);
+  }, [text, isPostFixState, isApplyingFix, userEditedAfterFix]);
 
   const applySuggestion = (suggestion) => {
-    // Use position-based replacement for more accurate corrections
-    const { start, end } = suggestion.position;
-    const newText = text.substring(0, start) + suggestion.suggested + text.substring(end);
+    console.log('🔧 Applying suggestion:', suggestion.original, '->', suggestion.suggested);
+    console.log('🎯 Position info:', suggestion.position);
+    console.log('🔤 Current text:', text);
+    
+    // Set flag to prevent automatic grammar checking during fix application
+    setIsApplyingFix(true);
+    setUserEditedAfterFix(false);
+    
+    // Use a more robust text replacement strategy
+    let newText = text;
+    
+    // Strategy 1: Try position-based replacement first
+    if (suggestion.position && suggestion.position.start !== undefined && suggestion.position.end !== undefined) {
+      const { start, end } = suggestion.position;
+      
+      // Verify the position is still valid and matches the expected text
+      const textAtPosition = text.substring(start, end);
+      console.log('📍 Text at position:', textAtPosition, 'Expected:', suggestion.original);
+      
+      if (textAtPosition === suggestion.original) {
+        newText = text.substring(0, start) + suggestion.suggested + text.substring(end);
+        console.log('✅ Used position-based replacement');
+      } else {
+        console.log('⚠️ Position mismatch, falling back to text search');
+        // Strategy 2: Fall back to first occurrence replacement
+        newText = text.replace(suggestion.original, suggestion.suggested);
+      }
+    } else {
+      console.log('⚠️ No valid position info, using text replacement');
+      // Strategy 3: Simple text replacement
+      newText = text.replace(suggestion.original, suggestion.suggested);
+    }
+    
+    console.log('🔄 Text change:', text, '->', newText);
     setText(newText);
+    
+    // Track this applied fix to prevent contradictory suggestions
+    const appliedFix = {
+      id: suggestion.id,
+      original: suggestion.original,
+      suggested: suggestion.suggested,
+      timestamp: Date.now()
+    };
+    
+    setAppliedFixes(prev => [...prev, appliedFix]);
+    setLastAppliedFixTime(Date.now());
+    setIsPostFixState(true);
+    
+    // Set a timeout to remove this fix from tracking after 30 seconds
+    const timeoutId = setTimeout(() => {
+      setAppliedFixes(prev => prev.filter(fix => fix.id !== suggestion.id));
+    }, 30000);
+    
+    appliedFixesTimeoutRef.current[suggestion.id] = timeoutId;
+    
+    // Remove the applied suggestion immediately
     setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
     
-    // Re-run grammar check after applying suggestion
+    // Clear the applying fix flag after a short delay
     setTimeout(() => {
-      handleGrammarCheck();
-    }, 500);
+      setIsApplyingFix(false);
+      
+      // Get the current suggestions count after filtering out the applied one
+      const remainingSuggestions = suggestions.filter(s => s.id !== suggestion.id);
+      
+      // Only perform one final grammar check if no other suggestions remain
+      // and the user hasn't made manual edits
+      if (remainingSuggestions.length === 0 && !userEditedAfterFix) {
+        console.log('🎯 Performing final grammar check after applying last suggestion');
+        setTimeout(() => {
+          handleGrammarCheck();
+        }, 500);
+      } else {
+        console.log(`⏸️ Skipping final check - ${remainingSuggestions.length} suggestions remaining`);
+      }
+    }, 1000);
+    
+    // Exit post-fix state after 5 seconds (allowing user to make manual edits)
+    setTimeout(() => {
+      setIsPostFixState(false);
+    }, 5000);
   };
 
   const clearText = () => {
     setText('');
     setSuggestions([]);
+    setAppliedFixes([]);
+    setIsPostFixState(false);
+    setIsApplyingFix(false);
+    setUserEditedAfterFix(false);
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
+    // Clear all applied fixes timeouts
+    Object.values(appliedFixesTimeoutRef.current).forEach(timeoutId => {
+      clearTimeout(timeoutId);
+    });
+    appliedFixesTimeoutRef.current = {};
   };
 
+  // Manual save function
+  const saveDocument = async () => {
+    if (!currentUser || !document?.id || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const { updateDocument } = await import('../firebase/firestore');
+      await updateDocument(document.id, {
+        content: text,
+        wordCount,
+        charCount,
+        lastModified: new Date()
+      });
+      setLastSaved(new Date());
+      console.log('Document saved successfully');
+    } catch (error) {
+      console.error('Save failed:', error);
+      alert('Failed to save document. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Auto-save functionality
   useEffect(() => {
-    if (autoSave && text && currentUser) {
-      const timer = setTimeout(() => {
-        setLastSaved(new Date());
-      }, 2000);
+    if (autoSave && text && currentUser && document?.id) {
+      const timer = setTimeout(async () => {
+        try {
+          setIsSaving(true);
+          const { updateDocument } = await import('../firebase/firestore');
+          await updateDocument(document.id, {
+            content: text,
+            wordCount,
+            charCount,
+            lastModified: new Date()
+          });
+          setLastSaved(new Date());
+          console.log('Document auto-saved successfully');
+        } catch (error) {
+          console.error('Auto-save failed:', error);
+        } finally {
+          setIsSaving(false);
+        }
+      }, 3000); // Auto-save after 3 seconds of no changes
       return () => clearTimeout(timer);
     }
-  }, [text, autoSave, currentUser]);
+  }, [text, autoSave, currentUser, document?.id, wordCount, charCount]);
 
   useEffect(() => {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -253,13 +527,15 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
     const newText = e.target.value;
     setText(newText);
     
-    // Auto-check grammar as user types (debounced)
-    if (newText.trim().length > 0) {
-      clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        handleGrammarCheck();
-      }, 2000);
+    // Mark that user has manually edited after a fix was applied
+    if (isPostFixState && !isApplyingFix) {
+      console.log('👤 User manually edited text after fix application');
+      setUserEditedAfterFix(true);
+      setIsPostFixState(false);
     }
+    
+    // Don't trigger grammar check here if we're currently applying a fix
+    // The useEffect will handle it based on the flags
   };
 
   // Determine if we're in embedded mode (like Try It page)
@@ -575,7 +851,15 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
                   transition: 'all 0.3s ease',
                   minHeight: '600px'
                 }}>
-                  <GrammarSuggestions suggestions={suggestions} text={text} isLoading={isChecking} onApplySuggestion={applySuggestion} hasText={text.trim().length > 0} />
+                  <GrammarSuggestions 
+                    suggestions={suggestions} 
+                    text={text} 
+                    isLoading={isChecking || isApplyingFix} 
+                    onApplySuggestion={applySuggestion} 
+                    hasText={text.trim().length > 0} 
+                    isPostFixState={isPostFixState} 
+                    isApplyingFix={isApplyingFix}
+                  />
                 </div>
               )}
             </div>
@@ -583,13 +867,20 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
             {/* Embedded Mode Grammar Suggestions */}
             {isEmbedded && (
               <div style={{ marginTop: '32px' }}>
-                <GrammarSuggestions suggestions={suggestions} text={text} isEmbedded={true} isLoading={isChecking} onApplySuggestion={applySuggestion} hasText={text.trim().length > 0} />
+                <GrammarSuggestions 
+                  suggestions={suggestions} 
+                  text={text} 
+                  isEmbedded={true} 
+                  isLoading={isChecking || isApplyingFix} 
+                  onApplySuggestion={applySuggestion} 
+                  hasText={text.trim().length > 0} 
+                  isPostFixState={isPostFixState} 
+                  isApplyingFix={isApplyingFix}
+                />
               </div>
             )}
           </div>
         </section>
-
-
 
         <style jsx>{`
           .editor-embedded {
@@ -684,23 +975,79 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
 
           {/* Header Controls */}
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
-            {currentUser && autoSave && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}>
-                <FiCheck style={{ width: '16px', height: '16px', color: '#55efc4' }} />
-                Auto-save Enabled
-              </div>
+            {currentUser && document?.id && (
+              <>
+                {/* Save Status */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}>
+                  {isSaving ? (
+                    <>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderTop: '2px solid white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite'
+                      }}></div>
+                      Saving...
+                    </>
+                  ) : lastSaved ? (
+                    <>
+                      <FiCheck style={{ width: '16px', height: '16px', color: '#55efc4' }} />
+                      Saved {new Date(lastSaved).toLocaleTimeString()}
+                    </>
+                  ) : (
+                    <>
+                      <FiClock style={{ width: '16px', height: '16px', color: '#ffeaa7' }} />
+                      Auto-save Ready
+                    </>
+                  )}
+                </div>
+
+                {/* Manual Save Button */}
+                <button
+                  onClick={saveDocument}
+                  disabled={isSaving}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    background: isSaving ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(20px)',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSaving) {
+                      e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = isSaving ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)';
+                  }}
+                >
+                  <FiCheck style={{ width: '16px', height: '16px' }} />
+                  Save Now
+                </button>
+              </>
             )}
             
             {!isPublic && (
@@ -844,6 +1191,58 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
                     )}
                   </button>
                   
+                  {/* Save Button - Only show for logged in users with documents */}
+                  {currentUser && document?.id && (
+                    <button
+                      onClick={saveDocument}
+                      disabled={isSaving}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 20px',
+                        background: isSaving ? 'rgba(46, 204, 113, 0.5)' : 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '16px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: isSaving ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 4px 16px rgba(46, 204, 113, 0.3)',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSaving) {
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 6px 20px rgba(46, 204, 113, 0.4)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 16px rgba(46, 204, 113, 0.3)';
+                      }}
+                    >
+                      {isSaving ? (
+                        <>
+                          <div style={{
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                            borderTop: '2px solid white',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <FiCheck style={{ width: '16px', height: '16px' }} />
+                          Save
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
                   <button
                     onClick={clearText}
                     style={{
@@ -956,10 +1355,12 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
             <div style={{ minHeight: '600px' }}>
               <GrammarSuggestions 
                 suggestions={suggestions}
-                isLoading={isChecking}
+                isLoading={isChecking || isApplyingFix}
                 onApplySuggestion={applySuggestion}
                 theme={theme}
                 hasText={text.trim().length > 0}
+                isPostFixState={isPostFixState}
+                isApplyingFix={isApplyingFix}
               />
             </div>
           </div>
