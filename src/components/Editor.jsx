@@ -1,375 +1,281 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { updateDocument } from '../firebase/firestore';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useGrammar } from '../contexts/GrammarContext';
+import { FiEdit3, FiCheck, FiClock, FiZap, FiTrash2 } from 'react-icons/fi';
 import GrammarSuggestions from './GrammarSuggestions';
 
-const Editor = ({ document, isPublic = false }) => {
+const Editor = ({ theme }) => {
   const { currentUser } = useAuth();
-  const { checkTextGrammar, corrections, stats, loading: grammarLoading, checkGrammarNow } = useGrammar();
-  
-  // Create a unique key for localStorage based on document or session
-  const storageKey = document ? `editor-${document.id}` : 'editor-public-session';
-  
-  // Initialize content from localStorage first, then document
-  const getInitialContent = () => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) return saved;
-    }
-    return document ? document.content || '' : '';
-  };
-
-  const [content, setContent] = useState(getInitialContent);
-  const [wordCount, setWordCount] = useState(0);
-  const [charCount, setCharCount] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const [text, setText] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [autoSave, setAutoSave] = useState(true);
   const [lastSaved, setLastSaved] = useState(null);
-  const [saveError, setSaveError] = useState(null);
-  
-  const saveTimeoutRef = useRef(null);
-  const textareaRef = useRef(null);
 
-  // Save to localStorage whenever content changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && content !== undefined) {
-      localStorage.setItem(storageKey, content);
-    }
-  }, [content, storageKey]);
-
-  // Calculate stats when content changes
-  useEffect(() => {
-    const words = content.trim() === '' ? 0 : content.trim().split(/\s+/).length;
-    const chars = content.length;
-    
-    setWordCount(words);
-    setCharCount(chars);
-  }, [content]);
-
-  // Auto-save functionality with debounce (only for authenticated users)
-  useEffect(() => {
-    if (document && content !== undefined && currentUser && !isPublic) {
-      // Clear existing timeout
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      // Only save if content has actually changed from the original
-      if (content !== (document.content || '')) {
-        saveTimeoutRef.current = setTimeout(async () => {
-          await saveDocument();
-        }, 3000); // 3 second debounce
-      }
-    }
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [content]); // Only depend on content to prevent infinite loops
-
-  // Real-time grammar checking with smart debouncing
-  useEffect(() => {
-    if (content.trim() && content.length > 5) { // Reduced minimum length for faster feedback
-      console.log('🔍 Auto-checking triggered for content:', content.substring(0, 50) + '...');
-      checkTextGrammar(content);
-    }
-  }, [content]); // Only depend on content to prevent function recreation loops
-
-  const saveDocument = async () => {
-    if (!document || !currentUser) {
-      console.log('Cannot save: missing document or user');
+  // Mock grammar check function
+  const checkGrammar = async () => {
+    if (!text.trim()) {
+      setSuggestions([]);
       return;
     }
 
-    try {
-      setIsSaving(true);
-      setSaveError(null);
-      
-      await updateDocument(document.id, {
-        content,
-        wordCount,
-        charCount
-      });
-      
-      setLastSaved(new Date());
-      
-      // Real-time Firestore listeners handle document updates automatically
-      // No need for manual callbacks that can cause infinite loops
-      
-    } catch (error) {
-      console.error('Save error:', error);
-      setSaveError(error.message);
-      
-      // Show user-friendly error message
-      if (error.code === 'permission-denied') {
-        alert('Permission denied: You can only edit your own documents.');
-      } else if (error.code === 'not-found') {
-        alert('Document not found. It may have been deleted.');
-      } else {
-        alert(`Failed to save document: ${error.message}`);
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleManualSave = async () => {
-    if (document && currentUser && !isPublic) {
-      await saveDocument();
-    }
-  };
-
-  const handleManualGrammarCheck = async () => {
-    if (content.trim() && checkGrammarNow) {
-      await checkGrammarNow(content);
-    }
-  };
-
-  // Apply a grammar correction to the text
-  const handleApplyCorrection = (original, corrected) => {
-    const newContent = content.replace(original, corrected);
-    setContent(newContent);
+    setIsChecking(true);
     
-    // Trigger a new grammar check after applying correction
+    // Simulate API delay
     setTimeout(() => {
-      if (checkGrammarNow) {
-        checkGrammarNow(newContent);
-      }
-    }, 100);
+      const mockSuggestions = [
+        {
+          id: 1,
+          type: 'grammar',
+          original: 'My name sabeeh is',
+          suggested: 'My name is Sabeeh',
+          explanation: 'The correct word order in English for stating one\'s name is \'My name is [Name].\' Additionally, names should be capitalized.',
+          position: { start: 0, end: 17 }
+        },
+        {
+          id: 2,
+          type: 'grammar',
+          original: 'my brother name wajeeh is',
+          suggested: 'My brother\'s name is Wajeeh',
+          explanation: 'The correct possessive form is \'brother\'s\' to indicate that the name belongs to the brother. Also, names and the first word of a sentence should be capitalized.',
+          position: { start: 18, end: 43 }
+        }
+      ];
+      
+      setSuggestions(mockSuggestions);
+      setIsChecking(false);
+    }, 1500);
   };
 
-  // Clear localStorage data
-  const handleClearText = () => {
-    if (confirm('Are you sure you want to clear all text? This cannot be undone.')) {
-      setContent('');
-      localStorage.removeItem(storageKey);
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
+  const applySuggestion = (suggestion) => {
+    const newText = text.replace(suggestion.original, suggestion.suggested);
+    setText(newText);
+    setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
+  };
+
+  const clearText = () => {
+    setText('');
+    setSuggestions([]);
+  };
+
+  useEffect(() => {
+    if (autoSave && text && currentUser) {
+      const timer = setTimeout(() => {
+        setLastSaved(new Date());
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  };
-
-  const formatSaveTime = (date) => {
-    if (!date) return '';
-    return date.toLocaleTimeString();
-  };
-
-  // Show setup notice for public pages (homepage)
-  if (isPublic) {
-    return (
-      <div className="editor-container">
-        <div className="editor-stats">
-          <span>Words: {wordCount}</span>
-          <span>Characters: {charCount}</span>
-          {content.trim() && (
-            <button 
-              onClick={handleClearText}
-              style={{
-                backgroundColor: '#ef4444',
-                color: 'white',
-                border: 'none',
-                padding: '0.25rem 0.5rem',
-                borderRadius: '0.25rem',
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                marginLeft: '1rem'
-              }}
-            >
-              Clear Text
-            </button>
-          )}
-        </div>
-        
-        <div style={{
-          backgroundColor: '#fef3c7',
-          border: '1px solid #fbbf24',
-          borderRadius: '0.5rem',
-          padding: '1rem',
-          marginBottom: '1rem'
-        }}>
-          <h4 style={{ color: '#92400e', fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-            📝 Grammar Feedback Tool
-          </h4>
-          <p style={{ color: '#92400e', fontSize: '0.875rem', margin: 0 }}>
-            This tool provides grammar feedback only - your text will never be changed automatically. Sign up to save your documents!
-          </p>
-        </div>
-
-        <div style={{ position: 'relative' }}>
-          <textarea
-            ref={textareaRef}
-            className="editor-textarea"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Start typing to see grammar feedback... Your text will never be changed automatically!"
-            style={{
-              minHeight: '300px',
-              resize: 'vertical'
-            }}
-          />
-        </div>
-        
-        {content.trim() && (
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-            <button 
-              onClick={handleManualGrammarCheck}
-              disabled={grammarLoading}
-              style={{
-                backgroundColor: grammarLoading ? '#9ca3af' : '#3b82f6',
-                color: 'white',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.25rem',
-                cursor: grammarLoading ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem'
-              }}
-            >
-              {grammarLoading ? 'Checking...' : '🔍 Check Grammar'}
-            </button>
-          </div>
-        )}
-        
-        {/* Show grammar suggestions for public page */}
-        {content.trim() && (
-          <div style={{ marginTop: '1rem' }}>
-            <GrammarSuggestions 
-              onManualCheck={handleManualGrammarCheck}
-              currentContent={content}
-              onApplyCorrection={handleApplyCorrection}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
+  }, [text, autoSave, currentUser]);
 
   return (
-    <div className="editor-layout">
-      <div className="editor-panel">
-        <div className="editor-container">
-          <div className="editor-header">
-            <div className="editor-stats">
-              <span>Words: {wordCount}</span>
-              <span>Characters: {charCount}</span>
-              {stats && stats.words > 0 && (
-                <>
-                  <span>Sentences: {stats.sentences}</span>
-                  <span>Issues: {corrections ? corrections.length : 0}</span>
-                </>
-              )}
-            </div>
-            
-            <div className="editor-actions">
-              {content.trim() && (
-                <>
-                  <button 
-                    onClick={handleManualGrammarCheck}
-                    disabled={grammarLoading}
-                    style={{
-                      backgroundColor: grammarLoading ? '#9ca3af' : '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.375rem 0.75rem',
-                      borderRadius: '0.25rem',
-                      cursor: grammarLoading ? 'not-allowed' : 'pointer',
-                      fontSize: '0.75rem',
-                      marginRight: '0.5rem'
-                    }}
-                  >
-                    {grammarLoading ? 'Checking...' : '🔍 Check'}
-                  </button>
-                  
-                  <button 
-                    onClick={handleClearText}
-                    style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.375rem 0.75rem',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      fontSize: '0.75rem',
-                      marginRight: '0.5rem'
-                    }}
-                  >
-                    Clear
-                  </button>
-                </>
-              )}
-              
-              <button 
-                onClick={handleManualSave}
-                disabled={isSaving || !currentUser}
+    <div 
+      className="min-h-screen p-8"
+      style={{
+        background: `linear-gradient(135deg, ${theme?.colors?.primary}05 0%, ${theme?.colors?.secondary}05 50%, ${theme?.colors?.accent}05 100%)`
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Beautiful Header */}
+        <div 
+          className="mb-8 p-6 rounded-3xl"
+          style={{
+            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #ffffff 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div 
+                className="p-4 rounded-2xl"
                 style={{
-                  backgroundColor: isSaving ? '#9ca3af' : '#6366f1',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.375rem 0.75rem',
-                  borderRadius: '0.25rem',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  fontSize: '0.75rem'
+                  background: `linear-gradient(135deg, ${theme?.colors?.primary || 'var(--theme-primary)'}, ${theme?.colors?.secondary || 'var(--theme-secondary)'})`
                 }}
               >
-                {isSaving ? 'Saving...' : '💾 Save'}
-              </button>
+                <FiEdit3 className="text-white text-2xl" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold gradient-text">Document Editor</h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-6">
+              {currentUser && autoSave && (
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <FiCheck className="text-green-500 w-5 h-5" />
+                  <span className="font-medium">Auto-save enabled</span>
+                </div>
+              )}
               
               {lastSaved && (
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  color: '#6b7280',
-                  marginLeft: '0.5rem'
-                }}>
-                  Saved at {formatSaveTime(lastSaved)}
-                </span>
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <FiClock className="text-blue-500 w-5 h-5" />
+                  <span className="font-medium">Saved {lastSaved.toLocaleTimeString()}</span>
+                </div>
               )}
             </div>
           </div>
-          
-          <div style={{ position: 'relative', flex: 1 }}>
-            <textarea
-              ref={textareaRef}
-              className="editor-textarea"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={isPublic 
-                ? "Start typing your essay here... (Sign up to save your work!)" 
-                : "Start writing your essay here... Text is saved automatically and never changed by the grammar checker."
-              }
-              style={{
-                border: saveError ? '2px solid #dc2626' : '1px solid #d1d5db',
-                minHeight: '400px',
-                resize: 'vertical'
-              }}
+        </div>
+
+        {/* Main Content - Side by Side Layout with Proper Spacing */}
+        <div className="flex h-[calc(100vh-250px)]">
+          {/* Left Side - Text Editor */}
+          <div 
+            className="flex-shrink-0 w-1/2 mr-8"
+            style={{
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #ffffff 100%)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '24px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <div className="p-8 h-full flex flex-col">
+              {/* Editor Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Write Your Text</h2>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={checkGrammar}
+                    disabled={isChecking || !text.trim()}
+                    className="group relative flex items-center space-x-2 px-8 py-4 font-bold rounded-3xl transition-all duration-500 hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:hover:scale-100 overflow-hidden"
+                    style={{
+                      background: isChecking 
+                        ? 'linear-gradient(135deg, #9CA3AF, #6B7280)' 
+                        : `linear-gradient(135deg, ${theme?.colors?.primary || 'var(--theme-primary)'}, ${theme?.colors?.secondary || 'var(--theme-secondary)'})`,
+                      color: 'white',
+                      boxShadow: '0 12px 30px rgba(0, 0, 0, 0.2)',
+                      border: '2px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                    {isChecking ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        <span className="relative z-10">Checking...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiZap className="w-5 h-5 relative z-10" />
+                        <span className="relative z-10">Check Grammar</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={clearText}
+                    className="group relative flex items-center space-x-2 px-8 py-4 font-bold rounded-3xl transition-all duration-500 hover:scale-105 hover:shadow-2xl overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(135deg, #F8FAFC, #E2E8F0)',
+                      color: '#475569',
+                      boxShadow: '0 12px 30px rgba(71, 85, 105, 0.15)',
+                      border: '2px solid rgba(148, 163, 184, 0.3)'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <FiTrash2 className="w-5 h-5 relative z-10 group-hover:text-red-600 transition-colors duration-300" />
+                    <span className="relative z-10 group-hover:text-red-600 transition-colors duration-300">Clear</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Text Area */}
+              <div className="flex-1 flex flex-col">
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Start writing here to get AI-powered grammar suggestions..."
+                  className="flex-1 w-full resize-none border-none outline-none p-8 text-gray-800 placeholder-gray-500 transition-all duration-300 focus:shadow-inner"
+                  style={{
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '18px',
+                    lineHeight: '1.8',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #ffffff 100%)',
+                    borderRadius: '20px',
+                    minHeight: '450px',
+                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.05)'
+                  }}
+                />
+                
+                {/* Stats */}
+                <div className="mt-6 pt-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center space-x-6">
+                    <span className="font-semibold flex items-center space-x-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      <span>{text.length} characters</span>
+                    </span>
+                    <span className="font-semibold flex items-center space-x-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      <span>{text.split(/\s+/).filter(word => word.length > 0).length} words</span>
+                    </span>
+                  </div>
+                  <div className="text-gray-500 italic">Keep typing for real-time analysis</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Grammar Suggestions */}
+          <div className="flex-1">
+            <GrammarSuggestions 
+              suggestions={suggestions}
+              isLoading={isChecking}
+              onApplySuggestion={applySuggestion}
+              theme={theme}
             />
           </div>
-          
-          {saveError && (
-            <div style={{
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '0.25rem',
-              padding: '0.5rem',
-              marginTop: '0.5rem'
-            }}>
-              <p style={{ color: '#dc2626', fontSize: '0.875rem', margin: 0 }}>
-                ⚠️ Save Error: {saveError}
-              </p>
-            </div>
-          )}
         </div>
-      </div>
-      
-      <div className="suggestions-panel">
-        <GrammarSuggestions 
-          onManualCheck={handleManualGrammarCheck}
-          currentContent={content}
-          onApplyCorrection={handleApplyCorrection}
-        />
+
+        {/* Call to Action for Non-Authenticated Users */}
+        {!currentUser && (
+          <div 
+            className="mt-8 p-8 text-center rounded-3xl"
+            style={{
+              background: `linear-gradient(135deg, ${theme?.colors?.primary || 'var(--theme-primary)'}10, ${theme?.colors?.secondary || 'var(--theme-secondary)'}10)`,
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <h3 className="text-3xl font-bold gradient-text mb-4" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+              Love what you see?
+            </h3>
+            <p className="text-gray-600 mb-8 text-lg" style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+              Sign up now to save your documents, track your progress, and unlock advanced AI writing features.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <button 
+                className="group relative flex items-center justify-center space-x-3 px-10 py-4 font-bold text-lg rounded-3xl transition-all duration-500 hover:scale-105 hover:shadow-2xl overflow-hidden"
+                style={{
+                  background: `linear-gradient(135deg, ${theme?.colors?.primary || 'var(--theme-primary)'}, ${theme?.colors?.secondary || 'var(--theme-secondary)'})`,
+                  color: 'white',
+                  boxShadow: '0 12px 30px rgba(0, 0, 0, 0.2)',
+                  border: '2px solid rgba(255, 255, 255, 0.1)',
+                  fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
+                }}
+              >
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                <span className="relative z-10">Create Free Account</span>
+              </button>
+              <button 
+                className="group relative flex items-center justify-center space-x-3 px-10 py-4 font-bold text-lg rounded-3xl transition-all duration-500 hover:scale-105 hover:shadow-2xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #F8FAFC, #E2E8F0)',
+                  color: '#475569',
+                  boxShadow: '0 12px 30px rgba(71, 85, 105, 0.15)',
+                  border: '2px solid rgba(148, 163, 184, 0.3)',
+                  fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10">Sign In</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default memo(Editor); 
+export default Editor; 

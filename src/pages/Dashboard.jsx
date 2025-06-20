@@ -7,7 +7,6 @@ import {
   subscribeToUserDocuments,
   testFirestoreConnection 
 } from '../firebase/firestore';
-import Navbar from '../components/Navbar';
 import Editor from '../components/Editor';
 
 const Dashboard = () => {
@@ -218,7 +217,6 @@ const Dashboard = () => {
   if (loading && firestoreStatus === 'connected') {
     return (
       <div className="min-h-screen">
-        <Navbar />
         <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
           <p>Loading your documents...</p>
         </div>
@@ -231,7 +229,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
       <main className="main-content">
         {/* Debug Info Panel */}
         <div style={{

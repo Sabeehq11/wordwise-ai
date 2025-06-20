@@ -1,414 +1,356 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { logOut } from '../firebase/auth';
+import { FiDroplet, FiChevronDown, FiUser, FiLogOut, FiSettings, FiEdit3 } from 'react-icons/fi';
 
-const Navbar = () => {
-  const { currentUser, logout } = useAuth();
+const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigate('/');
+      await logOut();
+      navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout failed:', error);
+      alert('Failed to log out. Please try again.');
     }
   };
 
   return (
-    <nav className="navbar">
-      <div className="navbar-content">
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Link to="/" className="navbar-brand">
-            WordWise
-          </Link>
-          <span style={{
-            backgroundColor: 'rgba(59, 130, 246, 0.9)',
-            color: 'white',
-            padding: '0.25rem 0.5rem',
-            borderRadius: '0.25rem',
-            fontSize: '0.75rem',
-            marginLeft: '0.5rem',
-            fontWeight: '500',
-            backdropFilter: 'blur(10px)'
+    <header className="navbar-modern" style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      background: `rgba(${theme?.primary ? theme.primary.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ') : '255, 255, 255'}, 0.1)`,
+      backdropFilter: 'blur(20px)',
+      borderBottom: `1px solid ${theme?.colors?.primary || theme?.primary}20`,
+      boxShadow: `0 4px 20px ${theme?.colors?.primary || theme?.primary}15`
+    }}>
+      <nav style={{ maxWidth: '1400px', margin: '0 auto', padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Logo */}
+          <NavLink to="/" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            textDecoration: 'none',
+            transition: 'all 0.3s ease'
           }}>
-            ESL Assistant
-          </span>
-        </div>
-        
-        {/* Mobile hamburger button */}
-        <button 
-          className="mobile-menu-toggle"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          style={{
-            display: 'none',
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            padding: '0.5rem'
-          }}
-        >
-          <div className="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+              transition: 'all 0.3s ease'
+            }}>
+              <FiEdit3 style={{ width: '24px', height: '24px', color: 'white' }} />
+            </div>
+            <span style={{
+              fontSize: '32px',
+              fontWeight: '900',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontFamily: 'Poppins, Inter, sans-serif'
+            }}>
+              WordWise AI
+            </span>
+          </NavLink>
+          
+          {/* Navigation Links */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <NavLink 
+              to="/" 
+              style={({ isActive }) => ({
+                padding: '12px 24px',
+                borderRadius: '12px',
+                fontWeight: '600',
+                fontSize: '16px',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+                background: isActive 
+                  ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
+                  : 'transparent',
+                color: isActive ? 'white' : '#2d3436',
+                boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
+              })}
+            >
+              Home
+            </NavLink>
+            <NavLink 
+              to="/try" 
+              style={({ isActive }) => ({
+                padding: '12px 24px',
+                borderRadius: '12px',
+                fontWeight: '600',
+                fontSize: '16px',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+                background: isActive 
+                  ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
+                  : 'transparent',
+                color: isActive ? 'white' : '#2d3436',
+                boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
+              })}
+            >
+              Try It Free
+            </NavLink>
+            {currentUser && (
+              <NavLink 
+                to="/dashboard" 
+                style={({ isActive }) => ({
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  background: isActive 
+                    ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
+                    : 'transparent',
+                  color: isActive ? 'white' : '#2d3436',
+                  boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
+                })}
+              >
+                Dashboard
+              </NavLink>
+            )}
           </div>
-        </button>
 
-        {/* Desktop navigation */}
-        <div className="desktop-nav" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          {currentUser ? (
-            // Authenticated user buttons
-            <>
-              <Link to="/" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  🏠 HOME
-                </button>
-              </Link>
-              <Link to="/dashboard" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: 'rgba(59, 130, 246, 0.9)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  📝 DASHBOARD
-                </button>
-              </Link>
-              <Link to="/try-it" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  ✨ TRY IT
-                </button>
-              </Link>
-              
-              {/* User Profile with Avatar */}
-              <Link to="/account" style={{ textDecoration: 'none' }}>
-                <div style={{
+          {/* Right Side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Theme Selector */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowThemeSelector(!showThemeSelector)}
+                className="theme-button"
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  padding: '0.375rem 0.75rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s',
-                  cursor: 'pointer'
+                  padding: '12px 24px',
+                  background: `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)`,
+                  color: 'white',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: `0 8px 25px ${theme?.colors?.primary || theme?.primary}30`
+                }}
+              >
+                <FiDroplet style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                Themes
+                <FiChevronDown style={{ width: '16px', height: '16px', marginLeft: '8px' }} />
+              </button>
+              
+              {showThemeSelector && (
+                <div style={{
+                  position: 'absolute',
+                  right: 0,
+                  marginTop: '8px',
+                  width: '320px',
+                  background: `rgba(${theme?.primary ? theme.primary.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ') : '255, 255, 255'}, 0.95)`,
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '20px',
+                  boxShadow: `0 20px 40px ${theme?.colors?.primary || theme?.primary}15`,
+                  border: `1px solid ${theme?.colors?.primary || theme?.primary}20`,
+                  padding: '16px',
+                  zIndex: 50
                 }}>
                   <div style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)',
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#2d3436',
+                    padding: '8px 12px',
+                    marginBottom: '16px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
+                    🎨 Choose Your Theme
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    {[
+                      { key: 'blue', name: 'Ocean Blue', desc: 'Professional & Clean', colors: ['#3b82f6', '#6366f1'] },
+                      { key: 'green', name: 'Forest Green', desc: 'Natural & Peaceful', colors: ['#10b981', '#65a30d'] },
+                      { key: 'purple', name: 'Royal Purple', desc: 'Elegant & Creative', colors: ['#a855f7', '#ec4899'] }
+                    ].map((themeOption) => (
+                      <button
+                        key={themeOption.key}
+                        onClick={() => {
+                          onThemeChange(themeOption.key);
+                          setShowThemeSelector(false);
+                        }}
+                        style={{
+                          padding: '16px',
+                          borderRadius: '12px',
+                          textAlign: 'left',
+                          transition: 'all 0.2s ease',
+                          background: currentTheme === themeOption.key 
+                            ? `linear-gradient(135deg, ${themeOption.colors[0]}20, ${themeOption.colors[1]}20)` 
+                            : 'transparent',
+                          border: currentTheme === themeOption.key 
+                            ? `2px solid ${themeOption.colors[0]}` 
+                            : '2px solid transparent',
+                          cursor: 'pointer',
+                          boxShadow: currentTheme === themeOption.key ? `0 4px 15px ${themeOption.colors[0]}30` : 'none'
+                        }}
+                      >
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          background: `linear-gradient(135deg, ${themeOption.colors[0]}, ${themeOption.colors[1]})`,
+                          marginBottom: '12px',
+                          boxShadow: `0 4px 12px ${themeOption.colors[0]}40`
+                        }}></div>
+                        <div style={{ fontWeight: '600', color: '#2d3436', fontSize: '14px', marginBottom: '4px' }}>
+                          {themeOption.name}
+                        </div>
+                        <div style={{ color: '#636e72', fontSize: '12px' }}>
+                          {themeOption.desc}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Menu */}
+            {currentUser ? (
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
+                    padding: '12px 24px',
+                    background: `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)`,
                     color: 'white',
-                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                    fontWeight: '600',
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: `0 8px 25px ${theme?.colors?.primary || theme?.primary}30`
+                  }}
+                >
+                  <FiUser style={{ width: '16px', height: '16px', marginRight: '8px' }} />
+                  {currentUser.displayName || currentUser.email?.split('@')[0] || 'User'}
+                  <FiChevronDown style={{ width: '16px', height: '16px', marginLeft: '8px' }} />
+                </button>
+                
+                {showUserMenu && (
+                  <div style={{
+                    position: 'absolute',
+                    right: 0,
+                    marginTop: '8px',
+                    width: '220px',
+                    background: `rgba(${theme?.primary ? theme.primary.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ') : '255, 255, 255'}, 0.95)`,
+                    backdropFilter: 'blur(20px)',
+                    borderRadius: '16px',
+                    boxShadow: `0 20px 40px ${theme?.colors?.primary || theme?.primary}15`,
+                    border: `1px solid ${theme?.colors?.primary || theme?.primary}20`,
+                    padding: '8px',
+                    zIndex: 50
                   }}>
-                    {currentUser.displayName 
-                      ? currentUser.displayName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
-                      : currentUser.email?.charAt(0).toUpperCase() || 'U'
-                    }
+                    <NavLink 
+                      to="/account" 
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        color: '#2d3436',
+                        textDecoration: 'none',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        background: 'transparent'
+                      }}
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <FiSettings style={{ width: '18px', height: '18px', marginRight: '12px' }} />
+                      Account Settings
+                    </NavLink>
+                    <button 
+                      onClick={() => {
+                        handleLogout();
+                        setShowUserMenu(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        color: '#e17055',
+                        background: 'transparent',
+                        border: 'none',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <FiLogOut style={{ width: '18px', height: '18px', marginRight: '12px' }} />
+                      Sign Out
+                    </button>
                   </div>
-                  <span style={{
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <NavLink 
+                  to="/login" 
+                  style={{
+                    padding: '12px 24px',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    color: '#2d3436',
+                    fontWeight: '600',
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${theme?.colors?.primary || theme?.primary}20`,
+                    textDecoration: 'none',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Sign In
+                </NavLink>
+                <NavLink 
+                  to="/signup" 
+                  style={{
+                    padding: '12px 24px',
+                    background: `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)`,
                     color: 'white',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    maxWidth: '120px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {currentUser.displayName || currentUser.email?.split('@')[0]}
-                  </span>
-                </div>
-              </Link>
-              
-              <button 
-                onClick={handleLogout}
-                style={{
-                  backgroundColor: 'rgba(220, 38, 38, 0.8)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            // Non-authenticated user buttons
-            <>
-              <Link to="/" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  🏠 HOME
-                </button>
-              </Link>
-              <Link to="/try-it" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  ✨ TRY IT
-                </button>
-              </Link>
-              <Link to="/login" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  LOGIN
-                </button>
-              </Link>
-              <Link to="/signup" style={{ textDecoration: 'none' }}>
-                <button style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s'
-                }}>
-                  SIGN UP
-                </button>
-              </Link>
-            </>
-          )}
+                    fontWeight: '700',
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    textDecoration: 'none',
+                    boxShadow: `0 8px 25px ${theme?.colors?.primary || theme?.primary}30`,
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Get Started
+                </NavLink>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Mobile navigation menu */}
-        <div 
-          className={`mobile-nav ${isMobileMenuOpen ? 'mobile-nav-open' : ''}`}
-          style={{
-            display: 'none',
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            backgroundColor: 'rgba(102, 126, 234, 0.95)',
-            backdropFilter: 'blur(20px)',
-            padding: '1rem',
-            borderRadius: '0 0 1rem 1rem',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            transform: isMobileMenuOpen ? 'translateY(0)' : 'translateY(-100%)',
-            opacity: isMobileMenuOpen ? 1 : 0,
-            transition: 'all 0.3s ease'
-          }}
-        >
-          {currentUser ? (
-            <>
-              <Link to="/" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  🏠 HOME
-                </button>
-              </Link>
-              <Link to="/dashboard" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(59, 130, 246, 0.9)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  📝 DASHBOARD
-                </button>
-              </Link>
-              <Link to="/try-it" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  ✨ TRY IT
-                </button>
-              </Link>
-              <button 
-                onClick={() => {
-                  handleLogout();
-                  setIsMobileMenuOpen(false);
-                }}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(220, 38, 38, 0.8)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}
-              >
-                SIGN OUT
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  🏠 HOME
-                </button>
-              </Link>
-              <Link to="/try-it" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  ✨ TRY IT
-                </button>
-              </Link>
-              <Link to="/login" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  LOGIN
-                </button>
-              </Link>
-              <Link to="/signup" style={{ textDecoration: 'none' }} onClick={() => setIsMobileMenuOpen(false)}>
-                <button style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  textAlign: 'left'
-                }}>
-                  SIGN UP
-                </button>
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 };
 

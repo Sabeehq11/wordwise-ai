@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 
 const Account = () => {
   const { currentUser } = useAuth();
@@ -40,8 +39,6 @@ const Account = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
-      
       <div className="main-content">
         <div style={{
           maxWidth: '900px',
