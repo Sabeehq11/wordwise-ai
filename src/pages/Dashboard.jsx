@@ -230,17 +230,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen">
       <main className="main-content">
-        {/* Debug Info Panel */}
-        <div style={{
-          backgroundColor: '#f3f4f6',
-          border: '1px solid #d1d5db',
-          borderRadius: '0.5rem',
-          padding: '1rem',
-          marginBottom: '1rem',
-          fontSize: '0.875rem'
-        }}>
-          <strong>Debug Info:</strong> Firestore Status: {firestoreStatus} | Documents: {documents.length} | Loading: {loading ? 'Yes' : 'No'}
-        </div>
+
         
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -266,8 +256,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Firestore Status */}
-        {renderFirestoreStatus()}
+
 
         {!showEditor ? (
           <div>
