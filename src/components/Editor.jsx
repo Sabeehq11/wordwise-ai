@@ -455,14 +455,13 @@ const Editor = ({ theme, document, isPublic, onBackToDashboard }) => {
   const clearText = () => {
     setText('');
     setSuggestions([]);
+    setWordCount(0);
+    setCharCount(0);
+    
+    // Clear applied fixes when clearing text
     setAppliedFixes([]);
-    setIsPostFixState(false);
-    setIsApplyingFix(false);
-    setUserEditedAfterFix(false);
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-    // Clear all applied fixes timeouts
+    
+    // Clear any pending timeouts
     Object.values(appliedFixesTimeoutRef.current).forEach(timeoutId => {
       clearTimeout(timeoutId);
     });

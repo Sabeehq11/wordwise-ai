@@ -4,13 +4,13 @@ import { FiArrowRight, FiStar, FiZap, FiEdit3, FiCheck } from 'react-icons/fi';
 
 const TryIt = ({ theme }) => {
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}>
+    <div style={{ minHeight: '100vh', background: theme?.bg || 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}>
       {/* Hero Section - Matching Home Page */}
       <section style={{ 
         padding: '120px 20px 80px 20px', 
         textAlign: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        color: 'white',
+        background: theme?.bg || 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+        color: theme?.isDark ? theme?.textPrimary : 'white',
         position: 'relative',
         overflow: 'hidden'
       }}>
@@ -139,11 +139,11 @@ const TryIt = ({ theme }) => {
 
           {/* Main Editor Container - Same Style as Home Feature Cards */}
           <div className="feature-card" style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
+            background: theme?.isDark ? theme.cardBg : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%)',
             backdropFilter: 'blur(20px)',
             borderRadius: '24px',
             padding: '40px',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            border: `1px solid ${theme?.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)'}`,
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
             transition: 'all 0.3s ease'
           }}>
@@ -163,10 +163,10 @@ const TryIt = ({ theme }) => {
                 <FiEdit3 style={{ width: '40px', height: '40px', color: 'white' }} />
               </div>
               <div>
-                <h3 style={{ fontSize: '28px', fontWeight: '700', color: '#2d3436', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '28px', fontWeight: '700', color: theme?.isDark ? theme?.textPrimary : '#2d3436', marginBottom: '8px' }}>
                   Document Editor
                 </h3>
-                <p style={{ color: '#636e72', fontSize: '18px', lineHeight: '1.6' }}>
+                <p style={{ color: theme?.isDark ? theme?.textSecondary : '#636e72', fontSize: '18px', lineHeight: '1.6' }}>
                   AI-powered writing assistance with real-time feedback
                 </p>
               </div>

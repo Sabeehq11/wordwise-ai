@@ -38,6 +38,17 @@
   --theme-bg: #FAF5FF;
 }
 
+.theme-dark {
+  --theme-primary: #4F46E5;
+  --theme-secondary: #7C3AED;
+  --theme-accent: #06B6D4;
+  --theme-text: #F8FAFC;
+  --theme-text-secondary: #CBD5E1;
+  --theme-bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  --theme-card-bg: rgba(30, 41, 59, 0.8);
+  --theme-navbar-bg: rgba(15, 23, 42, 0.95);
+}
+
 /* Global styles */
 * {
   margin: 0;
@@ -69,6 +80,19 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, var(--theme-secondary), var(--theme-primary));
+}
+
+/* Dark theme specific scrollbar */
+.theme-dark ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.theme-dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #4F46E5, #06B6D4);
+}
+
+.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #06B6D4, #4F46E5);
 }
 
 /* Glass morphism utilities */

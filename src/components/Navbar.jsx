@@ -25,7 +25,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      background: `rgba(255, 255, 255, 0.95)`,
+      background: theme?.isDark ? theme.navbarBg : `rgba(255, 255, 255, 0.95)`,
       backdropFilter: 'blur(20px)',
       borderBottom: `2px solid ${theme?.colors?.primary || theme?.primary}30`,
       boxShadow: `0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px ${theme?.colors?.primary || theme?.primary}20`
@@ -80,7 +80,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                 background: isActive 
                   ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
                   : 'transparent',
-                color: isActive ? 'white' : '#1f2937',
+                color: isActive ? 'white' : (theme?.isDark ? theme?.textPrimary : '#1f2937'),
                 boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none',
                 border: isActive ? 'none' : `1px solid transparent`,
                 ':hover': {
@@ -97,7 +97,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
               onMouseLeave={(e) => {
                 if (!e.target.classList.contains('active')) {
                   e.target.style.background = 'transparent';
-                  e.target.style.color = '#1f2937';
+                  e.target.style.color = theme?.isDark ? theme?.textPrimary : '#1f2937';
                 }
               }}
             >
@@ -115,7 +115,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                 background: isActive 
                   ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
                   : 'transparent',
-                color: isActive ? 'white' : '#1f2937',
+                color: isActive ? 'white' : (theme?.isDark ? theme?.textPrimary : '#1f2937'),
                 boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
               })}
               onMouseEnter={(e) => {
@@ -127,7 +127,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
               onMouseLeave={(e) => {
                 if (!e.target.classList.contains('active')) {
                   e.target.style.background = 'transparent';
-                  e.target.style.color = '#1f2937';
+                  e.target.style.color = theme?.isDark ? theme?.textPrimary : '#1f2937';
                 }
               }}
             >
@@ -146,7 +146,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   background: isActive 
                     ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
                     : 'transparent',
-                  color: isActive ? 'white' : '#1f2937',
+                  color: isActive ? 'white' : (theme?.isDark ? theme?.textPrimary : '#1f2937'),
                   boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
                 })}
                 onMouseEnter={(e) => {
@@ -158,7 +158,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                 onMouseLeave={(e) => {
                   if (!e.target.classList.contains('active')) {
                     e.target.style.background = 'transparent';
-                    e.target.style.color = '#1f2937';
+                    e.target.style.color = theme?.isDark ? theme?.textPrimary : '#1f2937';
                   }
                 }}
               >
@@ -200,7 +200,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   right: 0,
                   marginTop: '8px',
                   width: '320px',
-                  background: `rgba(255, 255, 255, 0.98)`,
+                  background: theme?.isDark ? theme.cardBg : `rgba(255, 255, 255, 0.98)`,
                   backdropFilter: 'blur(20px)',
                   borderRadius: '20px',
                   boxShadow: `0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 25px ${theme?.colors?.primary || theme?.primary}15`,
@@ -211,7 +211,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   <div style={{
                     fontSize: '18px',
                     fontWeight: '700',
-                    color: '#1f2937',
+                    color: theme?.isDark ? theme?.textPrimary : '#1f2937',
                     padding: '8px 12px',
                     marginBottom: '16px',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -221,11 +221,12 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   }}>
                     🎨 Choose Your Theme
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
                     {[
                       { key: 'blue', name: 'Ocean Blue', desc: 'Professional & Clean', colors: ['#3b82f6', '#6366f1'] },
                       { key: 'green', name: 'Forest Green', desc: 'Natural & Peaceful', colors: ['#10b981', '#65a30d'] },
-                      { key: 'purple', name: 'Royal Purple', desc: 'Elegant & Creative', colors: ['#a855f7', '#ec4899'] }
+                      { key: 'purple', name: 'Royal Purple', desc: 'Elegant & Creative', colors: ['#a855f7', '#ec4899'] },
+                      { key: 'dark', name: 'Midnight Dark', desc: 'Deep & Mysterious', colors: ['#4f46e5', '#06b6d4'] }
                     ].map((themeOption) => (
                       <button
                         key={themeOption.key}
@@ -256,10 +257,10 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                           marginBottom: '12px',
                           boxShadow: `0 4px 12px ${themeOption.colors[0]}40`
                         }}></div>
-                        <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '14px', marginBottom: '4px' }}>
+                        <div style={{ fontWeight: '600', color: theme?.isDark ? theme?.textPrimary : '#1f2937', fontSize: '14px', marginBottom: '4px' }}>
                           {themeOption.name}
                         </div>
-                        <div style={{ color: '#6b7280', fontSize: '12px' }}>
+                        <div style={{ color: theme?.isDark ? theme?.textSecondary : '#6b7280', fontSize: '12px' }}>
                           {themeOption.desc}
                         </div>
                       </button>
@@ -300,7 +301,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                     right: 0,
                     marginTop: '8px',
                     width: '220px',
-                    background: `rgba(255, 255, 255, 0.98)`,
+                    background: theme?.isDark ? theme.cardBg : `rgba(255, 255, 255, 0.98)`,
                     backdropFilter: 'blur(20px)',
                     borderRadius: '16px',
                     boxShadow: `0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 25px ${theme?.colors?.primary || theme?.primary}15`,
@@ -315,7 +316,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                         alignItems: 'center',
                         padding: '12px 16px',
                         borderRadius: '12px',
-                        color: '#1f2937',
+                        color: theme?.isDark ? theme?.textPrimary : '#1f2937',
                         textDecoration: 'none',
                         fontWeight: '500',
                         transition: 'all 0.2s ease',
@@ -328,7 +329,7 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                       }}
                       onMouseLeave={(e) => {
                         e.target.style.background = 'transparent';
-                        e.target.style.color = '#1f2937';
+                        e.target.style.color = theme?.isDark ? theme?.textPrimary : '#1f2937';
                       }}
                     >
                       <FiSettings style={{ width: '18px', height: '18px', marginRight: '12px' }} />
@@ -373,9 +374,9 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   to="/login" 
                   style={{
                     padding: '12px 24px',
-                    background: 'rgba(255, 255, 255, 0.9)',
+                    background: theme?.isDark ? theme.cardBg : 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(10px)',
-                    color: '#1f2937',
+                    color: theme?.isDark ? theme?.textPrimary : '#1f2937',
                     fontWeight: '600',
                     fontSize: '16px',
                     borderRadius: '12px',
@@ -391,8 +392,8 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                     e.target.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                    e.target.style.color = '#1f2937';
+                    e.target.style.background = theme?.isDark ? theme.cardBg : 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.color = theme?.isDark ? theme?.textPrimary : '#1f2937';
                     e.target.style.transform = 'translateY(0)';
                     e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
                   }}

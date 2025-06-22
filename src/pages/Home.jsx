@@ -4,13 +4,13 @@ import { FiZap, FiShield, FiUsers, FiStar, FiArrowRight, FiCheck } from 'react-i
 
 const Home = ({ theme }) => {
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div style={{ minHeight: '100vh', background: theme?.bg || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
       {/* Hero Section */}
       <section className="hero-gradient" style={{ 
         padding: '120px 20px', 
         textAlign: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        color: 'white',
+        background: theme?.bg || 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+        color: theme?.isDark ? theme?.textPrimary : 'white',
         position: 'relative',
         overflow: 'hidden'
       }}>
