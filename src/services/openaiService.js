@@ -1,18 +1,27 @@
-// OpenAI GPT-4o service for grammar checking
+// ⚠️ UNUSED FILE - This service is NOT used by the app
+// The app uses secureGrammarService.js instead, which calls Firebase Functions
+// This file is kept for reference only - all API calls go through secure Firebase Functions
+
+// OpenAI GPT-4o service for grammar checking - UNUSED
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-// Get API key from environment variables
+// DISABLED - Get API key from environment variables
+// This approach exposes API keys to the browser - NOT SECURE
+/*
 const getApiKey = () => {
   // In Vite, environment variables must be prefixed with VITE_ to be accessible in the browser
   // Set VITE_OPENAI_API_KEY in your .env file
   return import.meta.env.VITE_OPENAI_API_KEY;
 };
+*/
 
-// Check if OpenAI API is available
+// DISABLED - Check if OpenAI API is available
+/*
 export const isOpenAIAvailable = () => {
   const apiKey = getApiKey();
   return !!apiKey;
 };
+*/
 
 // Generate a comprehensive grammar checking prompt
 const createGrammarPrompt = (text) => {
@@ -60,7 +69,9 @@ Focus on:
 Be encouraging and educational in your explanations. If no errors are found, return an empty corrections array but still provide stats and positive feedback.`;
 };
 
-// Call OpenAI GPT-4o API for grammar checking
+// DISABLED - Call OpenAI GPT-4o API for grammar checking
+// This function is NOT used by the app - all calls go through secure Firebase Functions
+/*
 export const checkGrammarWithOpenAI = async (text) => {
   const apiKey = getApiKey();
   
@@ -229,4 +240,7 @@ export const testOpenAIConnection = async () => {
   } catch (error) {
     return { success: false, error: error.message };
   }
-}; 
+};
+*/
+
+// ✅ This file is now safely disabled - all API calls go through secure Firebase Functions 

@@ -84,30 +84,76 @@ A comprehensive writing assistant designed specifically for ESL (English as a Se
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
-- Firebase account (for authentication)
+- Firebase account (for authentication and cloud functions)
+- Git
 
-### Installation
+### 🚀 Local Development Setup
+
+#### 1. Clone the Repository
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone https://github.com/your-username/wordwise-ai.git
 cd wordwise-ai
+```
 
-# Install dependencies
+#### 2. Install Dependencies
+```bash
+# Install main project dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your Firebase configuration
+# Install Firebase Functions dependencies
+cd functions
+npm install
+cd ..
+```
 
-# Start development server
+#### 3. Environment Configuration
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your Firebase configuration
+# You'll need to add your Firebase config details
+```
+
+#### 4. Firebase Setup
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable Authentication (Email/Password)
+3. Set up Firestore Database
+4. Enable Functions (if using cloud functions)
+5. Add your Firebase config to `.env` file
+
+#### 5. Run the Development Server
+```bash
+# Start the React development server
 npm run dev
 ```
 
-### Firebase Configuration
-1. Create a Firebase project
-2. Enable Authentication (Email/Password)
-3. Set up Firestore Database
-4. Add your config to `.env`
+Your app will be available at `http://localhost:5173`
+
+#### 6. Firebase Functions Emulation (Optional)
+To test Firebase Functions locally:
+
+```bash
+# Install Firebase CLI globally (if not already installed)
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Start Firebase emulators
+firebase emulators:start --only functions
+
+# Or use the npm script in functions directory
+cd functions
+npm run serve
+```
+
+Functions will be available at `http://localhost:5001`
+
+### 🔧 Development Workflow
+1. **Frontend Development**: Use `npm run dev` for hot-reload React development
+2. **Functions Development**: Use `firebase emulators:start` for local function testing
+3. **Full Stack**: Run both commands in separate terminals for complete local development
 
 ## 📖 Usage Guide
 
@@ -203,13 +249,33 @@ npm run dev
 - Ensure latest browser version
 - Verify network connectivity
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please read the contributing guidelines and submit pull requests for any improvements.
+
+## 📄 License
+
+MIT License
+
+Copyright (c) 2025 Sabeeh Qureshi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 
