@@ -5,6 +5,109 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
   // Only show suggestions if there are actual suggestions AND there's text to analyze
   const mockSuggestions = (suggestions.length > 0 && hasText) ? suggestions : [];
 
+  // Function to classify grammar issues into specific tags
+  const getGrammarClassification = (suggestion) => {
+    const original = suggestion.original?.toLowerCase() || '';
+    const corrected = suggestion.corrected || suggestion.suggested || '';
+    const explanation = suggestion.explanation?.toLowerCase() || '';
+    const type = suggestion.type || '';
+
+    // Run-on sentences - look for multiple complete thoughts without proper punctuation
+    if (original.length > 80 && 
+        (original.includes(' i ') || original.includes(' he ') || original.includes(' she ') || original.includes(' they ')) &&
+        !original.includes('.') && !original.includes(';') && !original.includes(',') &&
+        (explanation.includes('run-on') || explanation.includes('long sentence') || explanation.includes('break') || 
+         corrected.includes('.') || corrected.includes(';'))) {
+      return 'Run-on Sentence';
+    }
+
+    // Sentence fragments - incomplete sentences
+    if ((original.length < 40 && !original.includes(' is ') && !original.includes(' are ') && !original.includes(' was ') && !original.includes(' were ')) ||
+        explanation.includes('fragment') || explanation.includes('incomplete') || explanation.includes('complete sentence')) {
+      return 'Sentence Fragment';
+    }
+
+    // Punctuation issues
+    if (type === 'punctuation' || 
+        explanation.includes('apostrophe') || explanation.includes('comma') || explanation.includes('period') || 
+        explanation.includes('punctuation') || explanation.includes("'") || 
+        (original.includes('dont') || original.includes('cant') || original.includes('wont') || original.includes('its going'))) {
+      return 'Punctuation';
+    }
+
+    // Spelling mistakes
+    if (type === 'spelling' || 
+        explanation.includes('spelling') || explanation.includes('misspelled') ||
+        (original.includes('teh') || original.includes('alot') || original.includes('recieve'))) {
+      return 'Spelling';
+    }
+
+    // Subject-verb agreement
+    if (explanation.includes('subject') && explanation.includes('verb') || 
+        explanation.includes('agreement') || explanation.includes('singular') || explanation.includes('plural') ||
+        (original.includes('i are') || original.includes('he are') || original.includes('she are'))) {
+      return 'Subject-Verb Agreement';
+    }
+
+    // Verb tense issues
+    if (explanation.includes('tense') || explanation.includes('past') || explanation.includes('present') || 
+        explanation.includes('future') || explanation.includes('continuous') ||
+        (original.includes('i am go') || original.includes('i will went'))) {
+      return 'Verb Tense';
+    }
+
+    // Articles (a, an, the)
+    if (explanation.includes('article') || explanation.includes('a apple') || explanation.includes('an house') ||
+        (original.includes('a apple') || original.includes('an house') || original.includes('a university'))) {
+      return 'Article Usage';
+    }
+
+    // Word choice/vocabulary
+    if (type === 'vocabulary' || explanation.includes('word choice') || explanation.includes('better word') ||
+        explanation.includes('vocabulary') || explanation.includes('synonym')) {
+      return 'Word Choice';
+    }
+
+    // Preposition errors
+    if (explanation.includes('preposition') || explanation.includes('in the') || explanation.includes('on the') ||
+        explanation.includes('at the') || (original.includes('in monday') || original.includes('on christmas'))) {
+      return 'Preposition';
+    }
+
+    // Possession vs. contraction confusion
+    if ((original.includes('its') && corrected.includes("it's")) || 
+        (original.includes('your') && corrected.includes("you're")) ||
+        (original.includes('there') && corrected.includes('their')) ||
+        explanation.includes('possession')) {
+      return 'Possession/Contraction';
+    }
+
+    // Style and clarity improvements
+    if (type === 'style' || explanation.includes('clarity') || explanation.includes('readability') ||
+        explanation.includes('style') || explanation.includes('flow')) {
+      return 'Style & Clarity';
+    }
+
+    // Capitalization
+    if (explanation.includes('capital') || explanation.includes('uppercase') || explanation.includes('lowercase')) {
+      return 'Capitalization';
+    }
+
+    // Default classification based on type
+    switch (type) {
+      case 'grammar':
+        return 'Grammar';
+      case 'spelling':
+        return 'Spelling';
+      case 'style':
+        return 'Style & Clarity';
+      case 'vocabulary':
+        return 'Word Choice';
+      default:
+        return 'Writing Issue';
+    }
+  };
+
   const getTypeConfig = (type) => {
     switch (type) {
       case 'grammar':
@@ -239,6 +342,7 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
             {mockSuggestions.map((suggestion) => {
               const config = getTypeConfig(suggestion.type);
               const IconComponent = config.icon;
+              const classification = getGrammarClassification(suggestion);
               
               return (
                 <div 
@@ -261,7 +365,7 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.08)';
                   }}
                 >
-                  {/* Issue Type Header */}
+                  {/* Issue Type Header with Specific Classification */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{
                       width: '40px',
@@ -275,9 +379,14 @@ const GrammarSuggestions = ({ suggestions = [], isLoading, onApplySuggestion, th
                     }}>
                       <IconComponent style={{ width: '20px', height: '20px', color: 'white' }} />
                     </div>
-                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: config.color }}>
-                      {config.label}
-                    </h4>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: '600', color: config.color, marginBottom: '2px' }}>
+                        {classification}
+                      </h4>
+                      <p style={{ fontSize: '12px', color: '#636e72', fontWeight: '500' }}>
+                        {config.label}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Content Sections */}

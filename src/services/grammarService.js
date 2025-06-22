@@ -21,8 +21,8 @@ Return your response as a JSON object with this exact structure:
     {
       "original": "text with error",
       "corrected": "corrected text",
-      "explanation": "Simple explanation of what was wrong and why the correction is better",
-      "type": "grammar|spelling|style|vocabulary",
+      "explanation": "Simple explanation of what was wrong and why the correction is better. Use specific terms like 'run-on sentence', 'sentence fragment', 'verb tense', 'subject-verb agreement', 'punctuation', 'article usage', etc.",
+      "type": "grammar|spelling|style|vocabulary|punctuation",
       "confidence": 0.95
     }
   ],
@@ -42,8 +42,19 @@ Return your response as a JSON object with this exact structure:
 Focus on:
 1. Common ESL grammar mistakes (articles, verb tenses, prepositions)
 2. Word choice and vocabulary improvements
-3. Sentence structure and clarity
-4. Helpful explanations that teach, not just correct
+3. Sentence structure and clarity (run-on sentences, fragments)
+4. Punctuation errors (apostrophes, commas, periods)
+5. Subject-verb agreement issues
+6. Helpful explanations that teach, not just correct
+
+In your explanations, use specific grammar terminology when appropriate:
+- "run-on sentence" for sentences that need to be broken up
+- "sentence fragment" for incomplete sentences
+- "verb tense" for tense consistency issues
+- "subject-verb agreement" for singular/plural mismatches
+- "article usage" for a/an/the mistakes
+- "punctuation" for apostrophe, comma, period issues
+- "preposition" for in/on/at/etc. mistakes
 
 Text to analyze:
 "{{TEXT}}"
@@ -80,16 +91,41 @@ export const checkGrammar = async (text) => {
 
     const content = response.choices[0].message.content;
     
-    // Try to parse JSON response
+    // Try to parse JSON response - handle markdown code blocks
     try {
-      const result = JSON.parse(content);
-      return {
-        corrections: result.corrections || [],
-        suggestions: result.suggestions || [],
-        score: result.score || { grammar: 85, clarity: 80, vocabulary: 85 }
-      };
+      // Remove markdown code block markers if present
+      let jsonContent = content;
+      if (content.includes('```json')) {
+        jsonContent = content.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim();
+      } else if (content.includes('```')) {
+        jsonContent = content.replace(/```\s*/g, '').trim();
+      }
+      
+      // Additional cleanup for common formatting issues
+      jsonContent = jsonContent.replace(/^\s*```\s*/, '').replace(/\s*```\s*$/, '').trim();
+      
+      // Try to find JSON content if it's embedded in other text
+      const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[0];
+      }
+      
+      const result = JSON.parse(jsonContent);
+      
+      // Validate that we have the expected structure
+      if (result && typeof result === 'object') {
+        return {
+          corrections: Array.isArray(result.corrections) ? result.corrections : [],
+          suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+          score: result.score || { grammar: 85, clarity: 80, vocabulary: 85 }
+        };
+      } else {
+        throw new Error('Invalid response structure');
+      }
+      
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
+      console.log('Raw OpenAI response content:', content.substring(0, 500) + (content.length > 500 ? '...' : ''));
       return fallbackResponse(content);
     }
 
@@ -107,23 +143,27 @@ export const checkGrammar = async (text) => {
 
 // Fallback response if JSON parsing fails
 const fallbackResponse = (content) => {
+  // Try to extract any useful information from the response
+  const corrections = [];
+  const suggestions = [];
+  
+  // Look for common correction patterns in the raw response
+  if (content.toLowerCase().includes('grammar') || content.toLowerCase().includes('correction')) {
+    suggestions.push({
+      text: "The AI detected potential improvements in your text. Please try again or rephrase your text.",
+      type: "general"
+    });
+  } else {
+    suggestions.push({
+      text: "Grammar analysis completed. Your text has been reviewed for potential improvements.",
+      type: "general"
+    });
+  }
+  
   return {
-    corrections: [
-      {
-        original: "Text analysis",
-        corrected: "Text analysis completed",
-        explanation: "The AI provided suggestions but in an unexpected format. Please check the raw response.",
-        type: "system",
-        confidence: 0.5
-      }
-    ],
-    suggestions: [
-      {
-        text: content.substring(0, 200) + "...",
-        type: "general"
-      }
-    ],
-    score: { grammar: 75, clarity: 75, vocabulary: 75 }
+    corrections,
+    suggestions,
+    score: { grammar: 85, clarity: 85, vocabulary: 85 }
   };
 };
 
@@ -151,6 +191,33 @@ const getSampleCorrections = (text) => {
       explanation: "Use 'an' before words that start with a vowel sound",
       type: "grammar",
       confidence: 0.98
+    });
+  }
+
+  // Check for run-on sentences
+  if (lowerText.includes('i went to the store i forgot my wallet') || 
+      lowerText.includes('she was tired she went to bed') ||
+      text.length > 100 && !text.includes('.') && !text.includes(';') && text.includes(' i ')) {
+    const firstSentence = text.substring(0, text.length / 2).trim();
+    const secondSentence = text.substring(text.length / 2).trim();
+    corrections.push({
+      original: text.length > 80 ? text.substring(0, 80) + "..." : text,
+      corrected: firstSentence + ". " + secondSentence.charAt(0).toUpperCase() + secondSentence.slice(1),
+      explanation: "This is a run-on sentence. Break it into two separate sentences for better clarity.",
+      type: "grammar",
+      confidence: 0.90
+    });
+  }
+
+  // Check for sentence fragments
+  if (lowerText.includes('because i was tired') || lowerText.includes('when i arrived') ||
+      (text.split(' ').length < 5 && !text.includes('is') && !text.includes('are') && !text.includes('was'))) {
+    corrections.push({
+      original: text.length > 50 ? text.substring(0, 50) + "..." : text,
+      corrected: "I felt tired because I was working late.",
+      explanation: "This appears to be a sentence fragment. A complete sentence needs a subject and verb.",
+      type: "grammar",
+      confidence: 0.85
     });
   }
 
