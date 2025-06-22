@@ -25,10 +25,10 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      background: `rgba(${theme?.primary ? theme.primary.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ') : '255, 255, 255'}, 0.1)`,
+      background: `rgba(255, 255, 255, 0.95)`,
       backdropFilter: 'blur(20px)',
-      borderBottom: `1px solid ${theme?.colors?.primary || theme?.primary}20`,
-      boxShadow: `0 4px 20px ${theme?.colors?.primary || theme?.primary}15`
+      borderBottom: `2px solid ${theme?.colors?.primary || theme?.primary}30`,
+      boxShadow: `0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px ${theme?.colors?.primary || theme?.primary}20`
     }}>
       <nav style={{ maxWidth: '1400px', margin: '0 auto', padding: '16px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -80,9 +80,26 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                 background: isActive 
                   ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
                   : 'transparent',
-                color: isActive ? 'white' : '#2d3436',
-                boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
+                color: isActive ? 'white' : '#1f2937',
+                boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none',
+                border: isActive ? 'none' : `1px solid transparent`,
+                ':hover': {
+                  background: !isActive ? `${theme?.colors?.primary || theme?.primary}10` : undefined,
+                  color: !isActive ? `${theme?.colors?.primary || theme?.primary}` : undefined
+                }
               })}
+              onMouseEnter={(e) => {
+                if (!e.target.classList.contains('active')) {
+                  e.target.style.background = `${theme?.colors?.primary || theme?.primary}10`;
+                  e.target.style.color = `${theme?.colors?.primary || theme?.primary}`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.target.classList.contains('active')) {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#1f2937';
+                }
+              }}
             >
               Home
             </NavLink>
@@ -98,9 +115,21 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                 background: isActive 
                   ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
                   : 'transparent',
-                color: isActive ? 'white' : '#2d3436',
+                color: isActive ? 'white' : '#1f2937',
                 boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
               })}
+              onMouseEnter={(e) => {
+                if (!e.target.classList.contains('active')) {
+                  e.target.style.background = `${theme?.colors?.primary || theme?.primary}10`;
+                  e.target.style.color = `${theme?.colors?.primary || theme?.primary}`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.target.classList.contains('active')) {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#1f2937';
+                }
+              }}
             >
               Try It Free
             </NavLink>
@@ -117,9 +146,21 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   background: isActive 
                     ? `linear-gradient(135deg, ${theme?.colors?.primary || theme?.primary} 0%, ${theme?.colors?.secondary || theme?.secondary} 100%)` 
                     : 'transparent',
-                  color: isActive ? 'white' : '#2d3436',
+                  color: isActive ? 'white' : '#1f2937',
                   boxShadow: isActive ? `0 4px 15px ${theme?.colors?.primary || theme?.primary}30` : 'none'
                 })}
+                onMouseEnter={(e) => {
+                  if (!e.target.classList.contains('active')) {
+                    e.target.style.background = `${theme?.colors?.primary || theme?.primary}10`;
+                    e.target.style.color = `${theme?.colors?.primary || theme?.primary}`;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.target.classList.contains('active')) {
+                    e.target.style.background = 'transparent';
+                    e.target.style.color = '#1f2937';
+                  }
+                }}
               >
                 Dashboard
               </NavLink>
@@ -159,18 +200,18 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   right: 0,
                   marginTop: '8px',
                   width: '320px',
-                  background: `rgba(${theme?.primary ? theme.primary.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ') : '255, 255, 255'}, 0.95)`,
+                  background: `rgba(255, 255, 255, 0.98)`,
                   backdropFilter: 'blur(20px)',
                   borderRadius: '20px',
-                  boxShadow: `0 20px 40px ${theme?.colors?.primary || theme?.primary}15`,
-                  border: `1px solid ${theme?.colors?.primary || theme?.primary}20`,
+                  boxShadow: `0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 25px ${theme?.colors?.primary || theme?.primary}15`,
+                  border: `2px solid ${theme?.colors?.primary || theme?.primary}20`,
                   padding: '16px',
                   zIndex: 50
                 }}>
                   <div style={{
                     fontSize: '18px',
                     fontWeight: '700',
-                    color: '#2d3436',
+                    color: '#1f2937',
                     padding: '8px 12px',
                     marginBottom: '16px',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -215,10 +256,10 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                           marginBottom: '12px',
                           boxShadow: `0 4px 12px ${themeOption.colors[0]}40`
                         }}></div>
-                        <div style={{ fontWeight: '600', color: '#2d3436', fontSize: '14px', marginBottom: '4px' }}>
+                        <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '14px', marginBottom: '4px' }}>
                           {themeOption.name}
                         </div>
-                        <div style={{ color: '#636e72', fontSize: '12px' }}>
+                        <div style={{ color: '#6b7280', fontSize: '12px' }}>
                           {themeOption.desc}
                         </div>
                       </button>
@@ -259,11 +300,11 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                     right: 0,
                     marginTop: '8px',
                     width: '220px',
-                    background: `rgba(${theme?.primary ? theme.primary.replace('#', '').match(/.{2}/g).map(hex => parseInt(hex, 16)).join(', ') : '255, 255, 255'}, 0.95)`,
+                    background: `rgba(255, 255, 255, 0.98)`,
                     backdropFilter: 'blur(20px)',
                     borderRadius: '16px',
-                    boxShadow: `0 20px 40px ${theme?.colors?.primary || theme?.primary}15`,
-                    border: `1px solid ${theme?.colors?.primary || theme?.primary}20`,
+                    boxShadow: `0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 25px ${theme?.colors?.primary || theme?.primary}15`,
+                    border: `2px solid ${theme?.colors?.primary || theme?.primary}20`,
                     padding: '8px',
                     zIndex: 50
                   }}>
@@ -274,13 +315,21 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                         alignItems: 'center',
                         padding: '12px 16px',
                         borderRadius: '12px',
-                        color: '#2d3436',
+                        color: '#1f2937',
                         textDecoration: 'none',
                         fontWeight: '500',
                         transition: 'all 0.2s ease',
                         background: 'transparent'
                       }}
                       onClick={() => setShowUserMenu(false)}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = `${theme?.colors?.primary || theme?.primary}10`;
+                        e.target.style.color = `${theme?.colors?.primary || theme?.primary}`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'transparent';
+                        e.target.style.color = '#1f2937';
+                      }}
                     >
                       <FiSettings style={{ width: '18px', height: '18px', marginRight: '12px' }} />
                       Account Settings
@@ -296,12 +345,20 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                         alignItems: 'center',
                         padding: '12px 16px',
                         borderRadius: '12px',
-                        color: '#e17055',
+                        color: '#dc2626',
                         background: 'transparent',
                         border: 'none',
                         fontWeight: '500',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = '#dc262610';
+                        e.target.style.color = '#b91c1c';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'transparent';
+                        e.target.style.color = '#dc2626';
                       }}
                     >
                       <FiLogOut style={{ width: '18px', height: '18px', marginRight: '12px' }} />
@@ -316,15 +373,28 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                   to="/login" 
                   style={{
                     padding: '12px 24px',
-                    background: 'rgba(255, 255, 255, 0.8)',
+                    background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(10px)',
-                    color: '#2d3436',
+                    color: '#1f2937',
                     fontWeight: '600',
                     fontSize: '16px',
                     borderRadius: '12px',
-                    border: `2px solid ${theme?.colors?.primary || theme?.primary}20`,
+                    border: `2px solid ${theme?.colors?.primary || theme?.primary}40`,
                     textDecoration: 'none',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = `${theme?.colors?.primary || theme?.primary}10`;
+                    e.target.style.color = `${theme?.colors?.primary || theme?.primary}`;
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                    e.target.style.color = '#1f2937';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
                   }}
                 >
                   Sign In
@@ -341,6 +411,14 @@ const Navbar = ({ theme, themes, currentTheme, onThemeChange }) => {
                     textDecoration: 'none',
                     boxShadow: `0 8px 25px ${theme?.colors?.primary || theme?.primary}30`,
                     transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = `0 12px 35px ${theme?.colors?.primary || theme?.primary}40`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = `0 8px 25px ${theme?.colors?.primary || theme?.primary}30`;
                   }}
                 >
                   Get Started

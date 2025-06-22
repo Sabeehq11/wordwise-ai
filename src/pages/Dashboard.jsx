@@ -230,25 +230,52 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen">
       <main className="main-content">
-
-        
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', marginBottom: '0.5rem' }}>
-                Welcome back, {currentUser?.displayName || currentUser?.email}!
+              <h1 style={{ 
+                fontSize: '48px', 
+                fontWeight: '900', 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                marginBottom: '12px',
+                fontFamily: 'Poppins, Inter, sans-serif',
+                lineHeight: '1.2'
+              }}>
+                Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
               </h1>
-              <p style={{ color: '#6b7280' }}>Manage your writing documents</p>
+              <p style={{ 
+                fontSize: '20px', 
+                color: '#6b7280', 
+                fontWeight: '400',
+                opacity: '0.8'
+              }}>
+                Manage your writing documents
+              </p>
             </div>
             <button 
               onClick={logout}
               style={{
-                backgroundColor: '#dc2626',
+                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
                 color: 'white',
-                padding: '0.5rem 1rem',
+                padding: '12px 24px',
                 border: 'none',
-                borderRadius: '0.25rem',
-                cursor: 'pointer'
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '16px',
+                boxShadow: '0 8px 25px rgba(220, 38, 38, 0.3)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 12px 35px rgba(220, 38, 38, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 8px 25px rgba(220, 38, 38, 0.3)';
               }}
             >
               Sign Out
@@ -256,87 +283,193 @@ const Dashboard = () => {
           </div>
         </div>
 
-
+        {renderFirestoreStatus()}
 
         {!showEditor ? (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Your Documents</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 style={{ 
+                fontSize: '36px', 
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: 'Poppins, Inter, sans-serif'
+              }}>
+                Your Documents
+              </h2>
               <button 
                 onClick={handleCreateDocument}
                 disabled={creating}
-                className="form-button"
                 style={{ 
-                  width: 'auto', 
-                  padding: '0.5rem 1rem',
+                  padding: '16px 32px',
                   opacity: creating ? 0.6 : 1,
                   cursor: creating ? 'not-allowed' : 'pointer',
-                  backgroundColor: '#3b82f6', // Force blue color
-                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
                   border: 'none',
-                  borderRadius: '0.375rem'
+                  borderRadius: '16px',
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  if (!creating) {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 12px 35px rgba(102, 126, 234, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!creating) {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
+                  }
                 }}
               >
-                {creating ? 'Creating...' : '+ New Document'}
+                {creating ? '✨ Creating...' : '+ New Document'}
               </button>
             </div>
 
             {documents.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-                <p style={{ fontSize: '1.1rem', color: '#6b7280', marginBottom: '1rem' }}>
-                  No documents yet. Create your first document to get started!
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '80px 40px',
+                background: 'rgba(255, 255, 255, 0.6)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
+              }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px auto',
+                  boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+                }}>
+                  <span style={{ fontSize: '32px', color: 'white' }}>📝</span>
+                </div>
+                <h3 style={{ 
+                  fontSize: '28px', 
+                  fontWeight: '700',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  marginBottom: '16px',
+                  fontFamily: 'Poppins, Inter, sans-serif'
+                }}>
+                  No documents yet
+                </h3>
+                <p style={{ 
+                  fontSize: '18px', 
+                  color: '#6b7280', 
+                  marginBottom: '32px',
+                  maxWidth: '400px',
+                  margin: '0 auto 32px auto',
+                  lineHeight: '1.6'
+                }}>
+                  Create your first document to get started with AI-powered writing assistance!
                 </p>
                 <button 
                   onClick={handleCreateDocument}
                   disabled={creating}
-                  className="form-button"
                   style={{ 
-                    width: 'auto', 
-                    padding: '0.75rem 1.5rem',
+                    padding: '18px 36px',
                     opacity: creating ? 0.6 : 1,
                     cursor: creating ? 'not-allowed' : 'pointer',
-                    backgroundColor: '#3b82f6', // Force blue color
-                    color: '#ffffff',
+                    background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%)',
+                    color: 'white',
                     border: 'none',
-                    borderRadius: '0.375rem'
+                    borderRadius: '16px',
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    boxShadow: '0 15px 35px rgba(255, 107, 107, 0.4)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!creating) {
+                      e.target.style.transform = 'translateY(-3px)';
+                      e.target.style.boxShadow = '0 20px 45px rgba(255, 107, 107, 0.5)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!creating) {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 15px 35px rgba(255, 107, 107, 0.4)';
+                    }
                   }}
                 >
-                  {creating ? 'Creating...' : 'Create Your First Document'}
+                  {creating ? '✨ Creating Your First Document...' : '✨ Create Your First Document'}
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+              <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' }}>
                 {documents.map((doc) => (
                   <div 
                     key={doc.id}
                     style={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.5rem',
-                      padding: '1.5rem',
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      borderRadius: '20px',
+                      padding: '32px',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
                       cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.3s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 30px 60px rgba(0, 0, 0, 0.15)';
+                      e.currentTarget.style.transform = 'translateY(-8px)';
+                      e.currentTarget.style.border = '1px solid rgba(102, 126, 234, 0.3)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.1)';
                       e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.3)';
                     }}
                   >
                     <div onClick={() => handleSelectDocument(doc)}>
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.75rem', color: '#111827' }}>
+                      <h3 style={{ 
+                        fontSize: '24px', 
+                        fontWeight: '700', 
+                        marginBottom: '16px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        fontFamily: 'Poppins, Inter, sans-serif'
+                      }}>
                         {doc.title}
                       </h3>
-                      <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                        {doc.content ? doc.content.substring(0, 100) + (doc.content.length > 100 ? '...' : '') : 'No content yet'}
+                      <p style={{ 
+                        color: '#6b7280', 
+                        fontSize: '16px', 
+                        marginBottom: '20px',
+                        lineHeight: '1.6',
+                        minHeight: '48px'
+                      }}>
+                        {doc.content ? doc.content.substring(0, 120) + (doc.content.length > 120 ? '...' : '') : 'No content yet - click to start writing!'}
                       </p>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
-                        <span>Words: {doc.wordCount || 0}</span>
-                        <span>Updated: {formatDate(doc.updatedAt)}</span>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        fontSize: '14px', 
+                        color: '#9ca3af',
+                        marginBottom: '20px'
+                      }}>
+                        <span style={{ fontWeight: '500' }}>📊 Words: {doc.wordCount || 0}</span>
+                        <span style={{ fontWeight: '500' }}>🕒 {formatDate(doc.updatedAt)}</span>
                       </div>
                     </div>
                     <button 
@@ -345,18 +478,29 @@ const Dashboard = () => {
                         handleDeleteDocument(doc.id);
                       }}
                       style={{
-                        backgroundColor: '#fef2f2',
+                        background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
                         color: '#dc2626',
-                        border: '1px solid #fecaca',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.75rem',
+                        border: '2px solid #fecaca',
+                        padding: '12px 20px',
+                        borderRadius: '12px',
+                        fontSize: '14px',
                         cursor: 'pointer',
-                        marginTop: '1rem',
-                        width: '100%'
+                        width: '100%',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+                        e.target.style.color = 'white';
+                        e.target.style.transform = 'translateY(-1px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+                        e.target.style.color = '#dc2626';
+                        e.target.style.transform = 'translateY(0)';
                       }}
                     >
-                      Delete
+                      🗑️ Delete Document
                     </button>
                   </div>
                 ))}
@@ -365,9 +509,17 @@ const Dashboard = () => {
           </div>
         ) : (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>
-                Editing: {selectedDocument?.title}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 style={{ 
+                fontSize: '32px', 
+                fontWeight: '700',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: 'Poppins, Inter, sans-serif'
+              }}>
+                ✏️ Editing: {selectedDocument?.title}
               </h2>
               <button 
                 onClick={() => {
@@ -377,25 +529,25 @@ const Dashboard = () => {
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
-                  padding: '0.75rem 1.5rem',
+                  padding: '16px 32px',
                   border: 'none',
-                  borderRadius: '12px',
+                  borderRadius: '16px',
                   cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
-                  transition: 'all 0.2s ease',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                  transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem'
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                  e.target.style.boxShadow = '0 12px 35px rgba(102, 126, 234, 0.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.3)';
+                  e.target.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.3)';
                 }}
               >
                 ← Back to Documents
